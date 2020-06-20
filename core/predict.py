@@ -12,7 +12,7 @@ import pathlib
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-class predict(object):
+class Predict(object):
 
     def __init__(self, model_id):
 
@@ -29,9 +29,8 @@ class predict(object):
         self.exp_cols = exp_cols_df["columns"].to_list()
 
     def predict(self, fixtures_to_predict):
-
         """
-        :param input_file: str - name of file containing the fixtures to predict
+        :param fixtures_to_predict: str - name of file containing the fixtures to predict
         :return: dataframe of probabilties
         """
         fixtures_to_predict["fixture"] = fixtures_to_predict["HomeTeam"] + " v " + fixtures_to_predict["AwayTeam"]
@@ -87,7 +86,6 @@ class predict(object):
                 raise Exception
 
         # scale
-        print(self.saved_models_dir + self.model_id + "/" + self.model_id + "_coeffs.csv")
         data_in_sclaed = scale_df_with_params(data_in, self.saved_models_dir + self.model_id + "/" + self.model_id + "_coeffs.csv")
         data_in_sclaed = data_in_sclaed.to_numpy()
         m, n = data_in.shape

@@ -18,7 +18,7 @@ def correct_pred(col1, col2):
         return 0
 
 
-class predictions(object):
+class Predictions(object):
 
     def __init__(self, week):
         self.path = str(pathlib.Path().absolute())
@@ -55,7 +55,7 @@ class predictions(object):
         display(self.weekly_pred)
 
 
-class results(predictions):
+class Results(Predictions):
 
     def aggregate(self):
         # load in actual resutls
@@ -100,23 +100,23 @@ class results(predictions):
         display(weekly_res)
 
         # find out who won each week and add that to a log
-        firstW = weekly_res[' '].iloc[0]
-        secondW = weekly_res[' '].iloc[1]
-        thridW = weekly_res[' '].iloc[2]
-        fourthW = weekly_res[' '].iloc[3]
+        firstw = weekly_res[' '].iloc[0]
+        secondw = weekly_res[' '].iloc[1]
+        thridw = weekly_res[' '].iloc[2]
+        fourthw = weekly_res[' '].iloc[3]
 
-        if firstW == secondW == thridW == fourthW:
+        if firstw == secondw == thridw == fourthw:
             print("For " + self.week + " it's a four way tie \n\n\n")
-            weekly_winner = firstW + ", " + secondW + ", " + thridW + ", " + ", " + fourthW
-        if firstW == secondW == thridW:
-            weekly_winner = firstW + ", " + secondW + ", " + thridW
+            weekly_winner = firstw + ", " + secondw + ", " + thridw + ", " + ", " + fourthw
+        if firstw == secondw == thridw:
+            weekly_winner = firstw + ", " + secondw + ", " + thridw
             print("For " + self.week + " it's a three way tie between: " + weekly_winner + "\n\n\n")
-        if firstW == secondW:
-            weekly_winner = firstW + "& " + secondW
+        if firstw == secondw:
+            weekly_winner = firstw + "& " + secondw
             print("For " + self.week + " it's a tie between: " + weekly_winner + "\n\n\n")
         else:
-            print("For " + self.week + " the winner is " + firstW + "\n\n\n")
-            weekly_winner = firstW
+            print("For " + self.week + " the winner is " + firstw + "\n\n\n")
+            weekly_winner = firstw
 
         winner_log_entry = {'Week': [self.week], "Winner": [weekly_winner]}
         log_output = self.running_results_dir + "/winners_log"
@@ -149,18 +149,18 @@ class results(predictions):
         print(colored("results to date:", "green"))
         display(log_res)
 
-        firstR = log_res[' '].iloc[0]
-        secondR = log_res[' '].iloc[1]
-        thridR = log_res[' '].iloc[2]
-        fourthR = log_res[' '].iloc[3]
+        firstr = log_res[' '].iloc[0]
+        secondr = log_res[' '].iloc[1]
+        thridr = log_res[' '].iloc[2]
+        fourthr = log_res[' '].iloc[3]
 
-        if firstR == secondR == thridR == fourthR:
-            print("Overall it's a four way tie \n\n\n")
-        if firstR == secondR == thridR:
-            running_winner = firstR + ", " + secondR + ", " + secondR
-            print("Overall it's a three way tie between: " + running_winner + "\n\n\n")
-        if firstR == secondR:
-            running_winner = firstR + "& " + firstR
-            print("Overall it's a tie between: " + running_winner + "\n\n\n")
+        if firstr == secondr == thridr == fourthr:
+            print("Overall it's a four way tie")
+        if firstr == secondr == thridr:
+            running_winner = firstr + ", " + secondr + ", " + thridr
+            print("Overall it's a three way tie between: " + running_winner)
+        if firstr == secondr:
+            running_winner = firstr + "& " + firstr
+            print("Overall it's a tie between: " + running_winner)
         else:
-            print("Overall the most accurate predictor is " + firstR + "\n\n\n")
+            print("Overall the most accurate predictor is " + firstr)

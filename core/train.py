@@ -18,7 +18,7 @@ from sklearn.exceptions import DataConversionWarning
 warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 
-class train_model(object):
+class Train(object):
 
     def __init__(self, model_type):
 
@@ -101,11 +101,9 @@ class train_model(object):
 
         if verbose:
             history = model.fit(train_final, epochs=epochs)
+            print("\nhistory dict:", history.history)
         else:
             history = model.fit(train_final, epochs=epochs, verbose=0)
-
-        if verbose:
-            print("\nhistory dict:", history.history)
 
         self.model_type = self.model_type.replace(" ", "")
 
@@ -117,6 +115,7 @@ class train_model(object):
         scaler_coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label=False, index=False)
 
         results = model.evaluate(test, test_labels, batch_size=50, verbose=0)
+
         if verbose:
             print("test loss, test acc:", results)
 
