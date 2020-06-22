@@ -10,7 +10,7 @@ from termcolor import colored
 from utilities.cleanup import Cleanup
 
 # which fixtures to predict
-fixtures_file_name = "w30f.csv"
+fixtures_file_name = "w31f.csv"
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,7 +41,15 @@ if not os.path.exists(res_dir):
 
 # location and name of fixtures to predict
 fixtures_file = path + "/fixtures/" + fixtures_file_name
-fixtures_to_predict = pd.read_csv(fixtures_file)
+name, file_extension = fixtures_file_name.split(".")
+
+if file_extension == "csv":
+    fixtures_to_predict = pd.read_csv(fixtures_file)
+elif file_extension == "json":
+    fixtures_to_predict = pd.read_json(fixtures_file)
+else:
+    raise Exception("File format " + file_extension + " not supported for fixtures to predict")
+
 week = fixtures_to_predict['Week'].to_list()
 week = list(set(week))
 

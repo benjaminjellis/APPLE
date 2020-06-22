@@ -75,12 +75,14 @@ class Train(object):
 
         # preapre test data
         test_labels = test_raw.pop("FTR")
+        test_length = test_raw.shape[0]
         test_labels = test_labels.to_numpy()
         test = test_raw
+
         test = test.to_numpy()
 
-        test = test.reshape(134, input_shape)
-        test_labels = test_labels.reshape(134, 1)
+        test = test.reshape(test_length, input_shape)
+        test_labels = test_labels.reshape(test_length, 1)
 
         def get_compiled_model():
             """
