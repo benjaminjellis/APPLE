@@ -10,7 +10,7 @@ from termcolor import colored
 from utilities.cleanup import Cleanup
 
 # which fixtures to predict
-fixtures_file_name = "w31f.csv"
+fixtures_file_name = "w32f.json"
 
 path = os.path.dirname(os.path.abspath(__file__))
 
