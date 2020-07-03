@@ -11,7 +11,8 @@ def preprocessing(df1, df2):
     """
     :param df1: dataframe
     :param df2: dataframe
-    :return: a cobined dataframe
+    :return: dataframe
+             a combined dataframe made up of the union of columns in df1 and df2
     """
 
     dataframes = [df1, df2]
@@ -26,11 +27,21 @@ def preprocessing(df1, df2):
 
 def processing(input_df, model_type):
     """
-    :param input_df: dataframe - dataframe to process
-    :param model_type: string - which model type to process data for
-    :return: train_raw - a dataframe of the raw data to be used for training, test_raw - a dataframe of the raw data to be used for testing,
-    input_shape - shape of the dataframes to be fed to model, ord_cols_df - list of the order of the columns in train_raw and test_raw,
-    coeffs - the coeffs used in the scaling of the data
+    :param input_df: dataframe
+            dataframe to process
+    :param model_type: string
+            which model type to process data for
+    :return:
+    train_raw: dataframe
+            dataframe of the raw data to be used for training
+    test_raw: dataframe
+            a dataframe of the raw data to be used for testing,
+    input_shape: tuple
+            shape of the dataframes to be fed to model
+    ord_cols_df: list of dtype str
+            list of the order of the columns in train_raw and test_raw
+    coeffs: dataframe
+            the coeffs used in the scaling of the data
     """
     FTR = input_df["FTR"]
     input_df.drop(labels=["FTR"], axis=1, inplace=True)

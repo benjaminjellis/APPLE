@@ -8,11 +8,15 @@ import pandas as pd
 import os
 from termcolor import colored
 from utilities.cleanup import Cleanup
+from pathlib import Path
+from core.data_mining import Mine
 
-# which fixtures to predict
-fixtures_file_name = "w32f.json"
+# load in the fixtures
+fixtures_file_name = "week32up.csv"
+# name of mined_data file to load in
+mined_data = "w32f.json"
 
-path = os.path.dirname(os.path.abspath(__file__))
+path = str(Path().absolute())
 
 models_to_train = ["model 1", "model 2", "model 3"]
 
@@ -27,30 +31,42 @@ print(colored("Training completed", "green"))
 log_loc = path + "/saved_models/"
 log = pd.read_csv(log_loc + "model_log.csv")
 
-# sort, descnding on test acc and grab the top performing model
-log = log.sort_values(by="Test Acc", ascending=False)
+# sort, descending on test acc and grab the top performing model
+log = log.sort_values(by = "Test Acc", ascending = False)
 top = log[:1]
 
 # then grab model id
 models = top['Model ID'].to_list()
 
-# where to store predictions made by the top performing model
-res_dir = path + "/predictions/"
-if not os.path.exists(res_dir):
-    os.mkdir(res_dir)
+# where to store predictions (for this week, defined by the fixtures file) made by the top performing model
+n = fixtures_file_name.strip("up.csv")
+predictions_dir = path + "/data/predictions/" + n + "/"
+
+if not os.path.exists(predictions_dir):
+    os.mkdir(predictions_dir)
 
 # location and name of fixtures to predict
-fixtures_file = path + "/fixtures/" + fixtures_file_name
-name, file_extension = fixtures_file_name.split(".")
+fixtures_file = predictions_dir + fixtures_file_name
+# load in the fixtures
+fixtures_to_predict = pd.read_csv(fixtures_file)
 
+# location and name of mined data
+mined_data_dir = path + "/data/mined_data/"
+mined_data_file = mined_data_dir + mined_data
+name, file_extension = mined_data.split(".")
 if file_extension == "csv":
-    fixtures_to_predict = pd.read_csv(fixtures_file)
+    mined_data_to_merge = pd.read_csv(mined_data_file)
 elif file_extension == "json":
-    fixtures_to_predict = pd.read_json(fixtures_file)
+    mined_data_to_merge = pd.read_json(mined_data_file)
 else:
-    raise Exception("File format " + file_extension + " not supported for fixtures to predict")
+    raise Exception("File format " + file_extension + " not supported for mined data to predict")
 
-week = fixtures_to_predict['Week'].to_list()
+# extract data for predictions from mined data by checking which fixtures
+# to predict
+fixtures_to_predict = fixtures_to_predict[["HomeTeam", "AwayTeam", "Week"]]
+fixtures_and_data_for_prediction = fixtures_to_predict.merge(mined_data_to_merge, how = "inner")
+
+week = fixtures_and_data_for_prediction['Week'].to_list()
 week = list(set(week))
 
 data_dir = path + "/data/backtesting/"
@@ -60,25 +76,13 @@ if not os.path.exists(data_dir):
 
 fixtures_for_back_testing = fixtures_to_predict.copy()
 fixtures_for_back_testing['FTR'] = "H"
-fixtures_for_back_testing.to_csv(data_dir + "week" + str(week[0]) + ".csv", index=False, index_label=False)
-
-if len(week) > 1:
-    res_dir = res_dir + "various_weeks/"
-if len(week) == 1:
-    res_dir = res_dir + "week" + str(week[0]) + "/"
-
-if not os.path.exists(res_dir):
-    os.mkdir(res_dir)
+fixtures_for_back_testing.to_csv(data_dir + "week" + str(week[0]) + ".csv", index = False, index_label = False)
 
 for model in models:
     print(colored("Using model No. " + str(model) + " for prediction", "yellow"))
-    predicted_results = Predict(model_id = model).predict(fixtures_to_predict = fixtures_to_predict)
+    predicted_results = Predict(model_id = model).predict(fixtures_to_predict = fixtures_and_data_for_prediction)
     print(colored(predicted_results, "blue"))
-    predicted_results.to_csv(res_dir + model + "_predicted_results.csv", index_label=False, index=False)
+    predicted_results.to_csv(predictions_dir + model + "_predicted_results.csv", index_label = False, index = False)
 
 # cleanup the saved_models dir
-# using try here as we've seen some errors in cleanup that are can't be explained, monitoring this
-try:
-    Cleanup()
-except FileNotFoundError:
-    raise Exception("Couldn't find a model cleanup is trying to remove")
+Cleanup()

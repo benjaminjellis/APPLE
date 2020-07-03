@@ -22,13 +22,13 @@ class Predictions(object):
 
     def __init__(self, week):
         self.path = str(pathlib.Path().absolute())
-        self.running_results_dir = self.path + "/predictions/running/"
+        self.running_results_dir = self.path + "/data/predictions/running/"
         self.running_results_log = self.running_results_dir + "results_log.csv"
         self.week = week
 
-        predictions_dir = self.path + "/predictions/" + week + "/"
+        predictions_dir = self.path + "/data/predictions/" + week + "/"
 
-        # load in the APPLE predictons
+        # load in the APPLE predictions
         for f in glob.glob(predictions_dir + "*_predicted_results.csv"):
             apple_pred = pd.read_csv(f)
 
@@ -160,7 +160,7 @@ class Results(Predictions):
             running_winner = firstr + ", " + secondr + ", " + thridr
             print("Overall it's a three way tie between: " + running_winner)
         if firstr == secondr:
-            running_winner = firstr + "& " + firstr
+            running_winner = firstr + "& " + secondr
             print("Overall it's a tie between: " + running_winner)
         else:
             print("Overall the most accurate predictor is " + firstr)
