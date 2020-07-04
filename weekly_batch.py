@@ -1,15 +1,17 @@
 """
-Script used to train models on new data and predict upcoming fixtures, this is done on a weekly basis
+Script used to train models on new data, back-test saved models on new data, and predict upcoming fixtures, this is done on a weekly basis
 """
 
 from core.train import Train
 from core.predict import Predict
+from core.data_mining import Mine
+from core.backtest import Backtest
 import pandas as pd
 import os
 from termcolor import colored
 from utilities.cleanup import Cleanup
 from pathlib import Path
-from core.data_mining import Mine
+
 
 # load in the fixtures
 fixtures_file_name = "week32up.csv"
@@ -26,6 +28,11 @@ Train(model_type = "model 1").train(epochs = 22, verbose = True)
 Train(model_type = "model 2").train(epochs = 22, verbose = True)
 Train(model_type = "model 3").train(epochs = 22, verbose = True)
 print(colored("Training completed", "green"))
+
+# back test all saved models on new data
+back_tester = Backtest()
+back_tester.all()
+back_tester.commit_log_updates()
 
 # interrogate the model log to pick the best models compiled thus far
 log_loc = path + "/saved_models/"
@@ -68,15 +75,6 @@ fixtures_and_data_for_prediction = fixtures_to_predict.merge(mined_data_to_merge
 
 week = fixtures_and_data_for_prediction['Week'].to_list()
 week = list(set(week))
-
-data_dir = path + "/data/backtesting/"
-
-if not os.path.exists(data_dir):
-    os.mkdir(data_dir)
-
-fixtures_for_back_testing = fixtures_to_predict.copy()
-fixtures_for_back_testing['FTR'] = "H"
-fixtures_for_back_testing.to_csv(data_dir + "week" + str(week[0]) + ".csv", index = False, index_label = False)
 
 for model in models:
     print(colored("Using model No. " + str(model) + " for prediction", "yellow"))

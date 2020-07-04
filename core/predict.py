@@ -24,7 +24,7 @@ class Predict(object):
         self.saved_models_dir = self.path + "/saved_models/"
         # load the selected trained model
         self.loaded_model = tf.keras.models.load_model(self.saved_models_dir + model_id + "/" + model_id + ".h5")
-        # load the list of expected datapoints for the chosen model
+        # load the list of expected features for the chosen model
         exp_cols_df = pd.read_csv(self.saved_models_dir + model_id + "/" + model_id + ".csv")
         self.exp_cols = exp_cols_df["columns"].to_list()
 
@@ -33,6 +33,7 @@ class Predict(object):
         :param fixtures_to_predict: str - name of file containing the fixtures to predict
         :return: dataframe of probabilties
         """
+
         fixtures_to_predict["fixture"] = fixtures_to_predict["HomeTeam"] + " v " + fixtures_to_predict["AwayTeam"]
         list_of_fixtures = fixtures_to_predict["fixture"].to_list()
 

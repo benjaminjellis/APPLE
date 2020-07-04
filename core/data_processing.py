@@ -25,12 +25,14 @@ def preprocessing(df1, df2):
     return raw_data_combined
 
 
-def processing(input_df, model_type):
+def processing(input_df, model_type, test_size):
     """
     :param input_df: dataframe
             dataframe to process
     :param model_type: string
             which model type to process data for
+    :param model_type: float
+            fraction, size of the test dataset returned
     :return:
     train_raw: dataframe
             dataframe of the raw data to be used for training
@@ -105,6 +107,6 @@ def processing(input_df, model_type):
 
     # split into test and train
     raw_data_combined_scaled = raw_data_combined_scaled.sample(frac=1).reset_index(drop=True)
-    train_raw, test_raw = train_test_split(raw_data_combined_scaled, test_size=0.2)
+    train_raw, test_raw = train_test_split(raw_data_combined_scaled, test_size = test_size)
 
     return train_raw, test_raw, input_shape, ord_cols_df, coeffs

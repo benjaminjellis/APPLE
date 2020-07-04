@@ -15,7 +15,7 @@ import core.data_processing as dp
 import warnings
 from sklearn.exceptions import DataConversionWarning
 
-warnings.filterwarnings(action="ignore", category=DataConversionWarning)
+warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
 
 class Train(object):
@@ -23,7 +23,8 @@ class Train(object):
     def __init__(self, model_type):
 
         """
-        :param model_type: str - one of "model 1", "model 2" or "model 3", see documentation for discussion on models
+        :param model_type: str
+                    one of "model 1", "model 2" or "model 3", see documentation for discussion on models
         """
 
         self.model_type = model_type
@@ -46,9 +47,11 @@ class Train(object):
 
     def train(self, epochs, verbose):
         """
-
-        :param epochs: int - number of epochs to train model for
-        :param verbose: boolean - verbose outputs or not
+        Method to train model
+        :param epochs: int
+                number of epochs to train model for
+        :param verbose: boolean
+                verbose outputs or not
         :return: nothing
         """
 
@@ -63,7 +66,8 @@ class Train(object):
 
         # process and split the data, return the shape of the data plus coeffs used to scale the data
         train_raw, test_raw, input_shape, ord_cols_df, scaler_coeffs = dp.processing(self.raw_data_combined,
-                                                                                     model_type=self.model_type)
+                                                                                     model_type = self.model_type,
+                                                                                     test_size = 0.2)
 
         # preapre train data
         # remove the target
@@ -89,23 +93,23 @@ class Train(object):
             :return: compiled model
             """
             model = tf.keras.Sequential([
-                tf.keras.Input(shape=(input_shape,)),
+                tf.keras.Input(shape = (input_shape,)),
                 tf.keras.layers.Dense(10),
-                tf.keras.layers.Dense(3, activation="softmax")
+                tf.keras.layers.Dense(3, activation = "softmax")
             ])
 
-            model.compile(optimizer="adam",
-                          loss=tf.keras.losses.sparse_categorical_crossentropy,
-                          metrics=["accuracy"])
+            model.compile(optimizer = "adam",
+                          loss = tf.keras.losses.sparse_categorical_crossentropy,
+                          metrics = ["accuracy"])
             return model
 
         model = get_compiled_model()
 
         if verbose:
-            history = model.fit(train_final, epochs=epochs)
+            history = model.fit(train_final, epochs = epochs)
             print("\nhistory dict:", history.history)
         else:
-            history = model.fit(train_final, epochs=epochs, verbose=0)
+            history = model.fit(train_final, epochs = epochs, verbose = 0)
 
         self.model_type = self.model_type.replace(" ", "")
 
@@ -113,10 +117,10 @@ class Train(object):
 
         # output the model, the columns and scalar
         model.save(model_output_dir + model_id + ".h5")
-        ord_cols_df.to_csv(model_output_dir + model_id + ".csv", index_label=False, index=False)
-        scaler_coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label=False, index=False)
+        ord_cols_df.to_csv(model_output_dir + model_id + ".csv", index_label = False, index = False)
+        scaler_coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label = False, index = False)
 
-        results = model.evaluate(test, test_labels, batch_size=50, verbose=0)
+        results = model.evaluate(test, test_labels, batch_size = 50, verbose = 0)
 
         if verbose:
             print("test loss, test acc:", results)
@@ -128,10 +132,10 @@ class Train(object):
         # update the log with results of test of model
         try:
             log = pd.read_csv(log_output)
-            log_update = pd.DataFrame(data=log_entry)
-            log = pd.concat([log, log_update], ignore_index=True)
+            log_update = pd.DataFrame(data = log_entry)
+            log = pd.concat([log, log_update], ignore_index = True)
         except FileNotFoundError:
             Path(log_output).touch()
-            log = pd.DataFrame(data=log_entry)
+            log = pd.DataFrame(data = log_entry)
 
-        log.to_csv(log_output, index=False, index_label=False)
+        log.to_csv(log_output, index = False, index_label = False)
