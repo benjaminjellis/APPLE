@@ -15,7 +15,7 @@ APPLE is currently under Phase 1 real world testing where it's being tested agin
 APPLE is also under continuous development, currently the following 3 areas are being developed:
 - Hyperparamter Opttimisation of models 
 - Automation of data mining 
-- Implementation of backtesting regime for contents monitoring of model performance
+- Implementation of backtesting regime for continuous monitoring of model performance
 
 Phase 1 is due to end with the 19/20 Premier League season and at this point APPLE will be upgraded ahead of the 20/21 season
 
