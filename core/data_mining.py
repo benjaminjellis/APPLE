@@ -64,7 +64,7 @@ class Mine(object):
         self.B365 = None
         self.INTERWTTEN = None
         self.BWIN = None
-        self.PINCALE = None
+        self.PINACLE = None
 
     def interwetten(self):
         pass
@@ -109,7 +109,7 @@ class Mine(object):
         combined = np.concatenate((teams_np,odds_np),axis=1)
 
         # save to object instance
-        self.PINCALE = pd.DataFrame(data = combined[0:, 0:], columns = ["HomeTeam", "AwayTeam", "PSH", "PSD", "PSA"])
+        self.PINACLE = pd.DataFrame(data = combined[0:, 0:], columns = ["HomeTeam", "AwayTeam", "PSH", "PSD", "PSA"])
 
     def bet365(self):
         pass
@@ -166,7 +166,7 @@ class Mine(object):
         odds = self.driver.find_elements_by_css_selector("button.sp-betbutton:not(.sp-betbutton--enhanced):not(.sp-betbutton--super-odds")
         odds_clean = []
         for o in odds:
-            odds_clean.append(o.text)
+            odds_clean.append(float(o.text))
 
         # convert odds to deci
         odds_decimal = convert_to_decimal(odds_clean)
@@ -183,8 +183,10 @@ class Mine(object):
         combined = np.concatenate((teams_np, odds_np), axis = 1)
 
         self.WH = pd.DataFrame(data = combined[0:, 0:], columns = ["HomeTeam", "AwayTeam", "WHH", "WHD", "WHA"])
+        self.WH.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/w33fWH.json")
 
-    def combine(self):
+
+    def all(self):
         """
         Method to mine from all sources at once
         :return:
@@ -195,10 +197,15 @@ class Mine(object):
         #self.interwetten()
         #self.bet365()
         self.driver.close()
+        # load weekly user predictions
+
+        fixtures = pd.read_csv("/Users/benjamin/PycharmProjects/APPLE/data/predictions/week33/week33up.csv")
+        fixtures = fixtures[["HomeTeam", "AwayTeam"]]
         # find out how to mergre all of the dfs
-        intermediate_1 = self.WH.merge(self.PINCALE)
-        output = intermediate_1.merge(self.BWIN)
-        output.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/test.json")
+        intermediate_1 = fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
+        intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
+        output = intermediate_2.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
+        output.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/w33f.json")
         # eventually return the mined data as a df that can be passed directly to
         # model preprocessing, but for now return to a dir
         # return output

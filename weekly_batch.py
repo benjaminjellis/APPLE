@@ -14,9 +14,9 @@ from pathlib import Path
 
 
 # load in the fixtures
-fixtures_file_name = "week32up.csv"
+fixtures_file_name = "week33up.csv"
 # name of mined_data file to load in
-mined_data = "w32f.json"
+mined_data = "w33f.json"
 
 path = str(Path().absolute())
 

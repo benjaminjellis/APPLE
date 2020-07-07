@@ -62,7 +62,7 @@ class Results(Predictions):
         ftr_loc = self.path + "/data/results/" + self.week + "res.csv"
         ftr = pd.read_csv(ftr_loc)
 
-        # add actual resutls to the weekly prediction table
+        # add actual results to the weekly prediction table
         self.weekly_pred["FTR"] = ftr["FTR"]
         display(self.weekly_pred)
         no_matches = self.weekly_pred.shape[0]

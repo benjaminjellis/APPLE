@@ -1,5 +1,5 @@
 """
-Backtest is a classed used to backtest and thus evaluate saved models on new data.
+Backtest is a class used to backtest and thus evaluate saved models on new data.
 Models are tested on a randomly selected 70% of 19/20 season data, the class then updates
 the model log
 """
@@ -57,6 +57,7 @@ class Backtest(object):
             - uniqe model id to backtest
         :return: nothing
         """
+        print("Backtesting model " + str(model_id))
         # grab entry for requested model
         model_details = self.model_log[self.model_log["Model ID"] == model_id]
         # get model type for re
