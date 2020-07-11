@@ -12,7 +12,15 @@ from sklearn.model_selection import train_test_split
 from core.scaler import scale_df_with_params
 from termcolor import colored
 import numpy as np
+from os import listdir
+from os.path import isfile, join
 pd.options.mode.chained_assignment = None  # default='warn'
+
+"""
+Backtest is a class used to backtest and thus evaluate saved models on new data.
+Models are tested on a randomly selected 70% of 19/20 season data, the class then updates
+the model log
+"""
 
 
 def log_update(model_id, results, model_log):
@@ -34,11 +42,53 @@ def log_update(model_id, results, model_log):
     model_log.at[row, "Test Acc"] = results[1]
 
 
+def load_and_aggregate(dir_to_aggregate):
+
+    """
+    Used to load all data files from specified dir and aggregate them into one dataframe
+    :param dir_to_aggregate: str
+            path of the directory to load and aggregate files form
+    :return: dataframe
+            dataframe of the loaded and aggregated data files
+    """
+
+    def read_json_or_csv(filepath):
+        path_ignore, extension = filepath.split(".")
+        if extension == "json":
+            read_df = pd.read_json(filepath)
+            return read_df
+        elif extension == "csv":
+            read_df = pd.read_csv(filepath)
+            return read_df
+        else:
+            raise Exception("Mined data file type not recognised: " + str(filepath))
+
+    # list files in dir_to_aggregate
+    files_in_dir = [f for f in listdir(dir_to_aggregate) if isfile(join(dir_to_aggregate, f))]
+
+    # remove .DS_Store from the list of files in dir_to_aggregate
+    while '.DS_Store' in files_in_dir:
+        files_in_dir.remove('.DS_Store')
+
+    # load first file in the dir_to_aggregate
+    aggregated_dataset = read_json_or_csv(dir_to_aggregate + files_in_dir[0])
+
+    # remove first file from the list of mined data files
+    files_in_dir.pop(0)
+
+    # loop through remaining data files and append them to self.mined_data
+    for file in files_in_dir:
+        loaded_file = read_json_or_csv(dir_to_aggregate + file)
+        aggregated_dataset = pd.concat([aggregated_dataset, loaded_file], ignore_index = True)
+
+    return aggregated_dataset
+
+
 class Backtest(object):
 
     def __init__(self):
         """
-        Constructor loads the model log and 19/20 season data, maps location of daved models
+        Constructor loads the model log, aggregates data to make backtesting dataset, maps locations of saved models
         """
         # load model log
         self.path = str(Path().absolute())
@@ -47,8 +97,17 @@ class Backtest(object):
         self.model_log = pd.read_csv(self.model_log_path)
         # get location of saved models
         self.saved_models_dir = self.path + "/saved_models/"
-        # load in data that's used to train / test the models just for the 19/20 season
-        self.data_19_20 = pd.read_csv(self.path + "/data/raw/1920.csv")
+
+        # load and aggreate all mined data
+        mined_data_dir = self.path + "/data/mined_data/"
+        mined_data_aggregated = load_and_aggregate(mined_data_dir)
+
+        # load and aggreate all ftrs
+        ftrs_dir = self.path + "/data/results/"
+        ftrs_aggregated = load_and_aggregate(ftrs_dir)
+
+        # inner join to get raw backtesing data
+        self.raw_backtesting_data = pd.merge(mined_data_aggregated, ftrs_aggregated, on = ["HomeTeam", "AwayTeam"])
 
     def model(self, model_id):
         """
@@ -60,19 +119,19 @@ class Backtest(object):
         print("Backtesting model " + str(model_id))
         # grab entry for requested model
         model_details = self.model_log[self.model_log["Model ID"] == model_id]
-        # get model type for re
+        # get model type for requested model
         model_type = int(model_details["Model type"].iloc[0])
 
         # load scaled
         sclaer_coeffs_loc = self.saved_models_dir + model_id + "/" + model_id + "_coeffs.csv"
         # grab the model
         loaded_model = tf.keras.models.load_model(self.saved_models_dir + model_id + "/" + model_id + ".h5")
-        # load the expected features for the loaded model
         exp_features_df = pd.read_csv(self.saved_models_dir + model_id + "/" + model_id + ".csv")
         exp_features = exp_features_df["columns"].to_list()
+
         # add FTR to the list of expected features
         exp_features.append("FTR")
-        rawdata = self.data_19_20
+        rawdata = self.raw_backtesting_data
 
         # code below is replicated from predict.py, turn this into a def and use in both classes
         if model_type == 2 or model_type == 3:
@@ -86,7 +145,7 @@ class Backtest(object):
         # this block is also used in predict.py, this should be packed up into a function and stored
         # somewhere in core
         try:
-            reduced_data = rawdata[exp_features]
+            backtesting_data = rawdata[exp_features]
         except KeyError:
             key_present = list(rawdata.columns)
             keys_missing = []
@@ -112,7 +171,7 @@ class Backtest(object):
                 for key in keys_missing:
                     rawdata[key] = entry
                 try:
-                    reduced_data = rawdata[exp_features]
+                    backtesting_data = rawdata[exp_features]
                     print(colored("Input data fixed", 'green'))
                 except KeyError:
                     print(colored("ERROR - Missing datapoint(s): ", 'red'))
@@ -127,10 +186,7 @@ class Backtest(object):
 
         # categorical encoding for FTR col
         result_cleanup = {"FTR": {"H": 0, "A": 1, "D": 2}}
-        reduced_data.replace(result_cleanup, inplace = True)
-        # split the 19/20 data
-        data_not_used, backtesting_data = train_test_split(reduced_data, test_size = 0.7, shuffle = True)
-        backtesting_data = backtesting_data[exp_features]
+        backtesting_data.replace(result_cleanup, inplace = True)
 
         # remove labels
         backtesting_data_labels = backtesting_data.pop("FTR")
