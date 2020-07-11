@@ -17,7 +17,6 @@ from sklearn.exceptions import DataConversionWarning
 
 warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
-
 class Train(object):
 
     def __init__(self, model_type):
