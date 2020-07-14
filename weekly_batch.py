@@ -1,5 +1,5 @@
 """
-Script used to train models on new data, back-test saved models on new data, and predict upcoming fixtures, this is done on a weekly basis
+Script used to train models on new data, back-test saved models, and predict upcoming fixtures
 """
 
 from core.train import Train
@@ -12,15 +12,18 @@ from termcolor import colored
 from utilities.cleanup import Cleanup
 from pathlib import Path
 
+week_number = "34"
 
 # load in the fixtures
-fixtures_file_name = "week33up.csv"
+fixtures_file_name = "week" + week_number + "up.csv"
 # name of mined_data file to load in
-mined_data = "w33f.json"
+mined_data = "w" + week_number + "f.json"
 
 path = str(Path().absolute())
 
 models_to_train = ["model 1", "model 2", "model 3"]
+
+# not training until implementation of k cross fold verification is implemented
 
 # train all 3 models on the latest data
 print(colored("Training models on new data....", "green"))
@@ -30,7 +33,7 @@ Train(model_type = "model 3").train(epochs = 22, verbose = True)
 print(colored("Training completed", "green"))
 
 # back test all saved models on new data
-back_tester = Backtest()
+back_tester = Backtest(week = week_number)
 back_tester.all()
 back_tester.commit_log_updates()
 
@@ -61,6 +64,7 @@ fixtures_to_predict = pd.read_csv(fixtures_file)
 mined_data_dir = path + "/data/mined_data/"
 mined_data_file = mined_data_dir + mined_data
 name, file_extension = mined_data.split(".")
+
 if file_extension == "csv":
     mined_data_to_merge = pd.read_csv(mined_data_file)
 elif file_extension == "json":
@@ -80,7 +84,7 @@ for model in models:
     print(colored("Using model No. " + str(model) + " for prediction", "yellow"))
     predicted_results = Predict(model_id = model).predict(fixtures_to_predict = fixtures_and_data_for_prediction)
     print(colored(predicted_results, "blue"))
-    predicted_results.to_csv(predictions_dir + model + "_predicted_results.csv", index_label = False, index = False)
+    # predicted_results.to_csv(predictions_dir + model + "_predicted_results.csv", index_label = False, index = False)
 
 # cleanup the saved_models dir
 Cleanup()

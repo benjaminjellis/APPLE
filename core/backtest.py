@@ -1,26 +1,18 @@
 """
-Backtest is a class used to backtest and thus evaluate saved models on new data.
-Models are tested on a randomly selected 70% of 19/20 season data, the class then updates
-the model log
+Backtest is a class used to backtest and thus evaluate saved models on data (mined_data) that is mined each week for predictions
+The class then updates the model log with the backtesing results
 """
 
 
 import tensorflow as tf
 from pathlib import Path
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from core.scaler import scale_df_with_params
 from termcolor import colored
 import numpy as np
 from os import listdir
 from os.path import isfile, join
 pd.options.mode.chained_assignment = None  # default='warn'
-
-"""
-Backtest is a class used to backtest and thus evaluate saved models on new data.
-Models are tested on a randomly selected 70% of 19/20 season data, the class then updates
-the model log
-"""
 
 
 def log_update(model_id, results, model_log):
@@ -42,7 +34,7 @@ def log_update(model_id, results, model_log):
     model_log.at[row, "Test Acc"] = results[1]
 
 
-def load_and_aggregate(dir_to_aggregate):
+def load_and_aggregate(dir_to_aggregate, week):
 
     """
     Used to load all data files from specified dir and aggregate them into one dataframe
@@ -70,6 +62,11 @@ def load_and_aggregate(dir_to_aggregate):
     while '.DS_Store' in files_in_dir:
         files_in_dir.remove('.DS_Store')
 
+    if "mined_data" in dir_to_aggregate:
+        files_in_dir.remove("w" + week + "f.json")
+
+    print(files_in_dir)
+
     # load first file in the dir_to_aggregate
     aggregated_dataset = read_json_or_csv(dir_to_aggregate + files_in_dir[0])
 
@@ -86,11 +83,12 @@ def load_and_aggregate(dir_to_aggregate):
 
 class Backtest(object):
 
-    def __init__(self):
+    def __init__(self, week):
         """
         Constructor loads the model log, aggregates data to make backtesting dataset, maps locations of saved models
         """
         # load model log
+        self.week_being_predicted = week
         self.path = str(Path().absolute())
         self.model_log_loc = self.path + "/saved_models/"
         self.model_log_path = self.model_log_loc + "model_log.csv"
@@ -100,11 +98,11 @@ class Backtest(object):
 
         # load and aggreate all mined data
         mined_data_dir = self.path + "/data/mined_data/"
-        mined_data_aggregated = load_and_aggregate(mined_data_dir)
+        mined_data_aggregated = load_and_aggregate(mined_data_dir, week = self.week_being_predicted)
 
         # load and aggreate all ftrs
         ftrs_dir = self.path + "/data/results/"
-        ftrs_aggregated = load_and_aggregate(ftrs_dir)
+        ftrs_aggregated = load_and_aggregate(ftrs_dir, week = self.week_being_predicted)
 
         # inner join to get raw backtesing data
         self.raw_backtesting_data = pd.merge(mined_data_aggregated, ftrs_aggregated, on = ["HomeTeam", "AwayTeam"])

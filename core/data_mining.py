@@ -26,7 +26,7 @@ def convert_to_decimal(odds):
             val = float(n / d + 1)
         else:
             val = float(new_odds[i])
-        new_odds[i] = val
+        new_odds[i] = float(val)
 
     return new_odds
 
@@ -94,7 +94,7 @@ class Mine(object):
         # create list of the odds
         odds_clean = []
         for p in odds:
-            odds_clean.append(float(p.text))
+            odds_clean.append(p.text)
 
         # check that we're getting the right shape
         if int(len(teams) / 2) * 3 != len(odds_clean):
@@ -160,13 +160,15 @@ class Mine(object):
         teams = []
         for f in fixtures_tags:
             home, away = f.text.split(" v ")
+            home = team_cleaner(team = home)
+            away = team_cleaner(team = away)
             teams.append(home)
             teams.append(away)
 
         odds = self.driver.find_elements_by_css_selector("button.sp-betbutton:not(.sp-betbutton--enhanced):not(.sp-betbutton--super-odds")
         odds_clean = []
         for o in odds:
-            odds_clean.append(float(o.text))
+            odds_clean.append(o.text)
 
         # convert odds to deci
         odds_decimal = convert_to_decimal(odds_clean)
@@ -178,12 +180,12 @@ class Mine(object):
                 'red'))
             self.warnings = True
 
+
         teams_np = np.reshape(teams, (int(len(teams) / 2), 2))
         odds_np = np.reshape(odds_decimal, (int(len(teams) / 2), 3))
         combined = np.concatenate((teams_np, odds_np), axis = 1)
 
         self.WH = pd.DataFrame(data = combined[0:, 0:], columns = ["HomeTeam", "AwayTeam", "WHH", "WHD", "WHA"])
-        self.WH.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/w33fWH.json")
 
 
     def all(self):
@@ -199,13 +201,13 @@ class Mine(object):
         self.driver.close()
         # load weekly user predictions
 
-        fixtures = pd.read_csv("/Users/benjamin/PycharmProjects/APPLE/data/predictions/week33/week33up.csv")
+        fixtures = pd.read_csv("/Users/benjamin/PycharmProjects/APPLE/data/predictions/week" + str(self.week ) + "/week" + str(self.week ) + "up.csv")
         fixtures = fixtures[["HomeTeam", "AwayTeam"]]
         # find out how to mergre all of the dfs
         intermediate_1 = fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
         intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
         output = intermediate_2.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
-        output.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/w33f.json")
+        output.to_json("/Users/benjamin/PycharmProjects/APPLE/data/mined_data/w"+str(self.week) + "f.json")
         # eventually return the mined data as a df that can be passed directly to
         # model preprocessing, but for now return to a dir
         # return output
