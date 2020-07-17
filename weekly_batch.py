@@ -4,7 +4,7 @@ Script used to train models on new data, back-test saved models, and predict upc
 
 from core.train import Train
 from core.predict import Predict
-from core.data_mining import Mine
+from core.miners import MineOdds, MineFixture, user_file_overwrite_check
 from core.backtest import Backtest
 import pandas as pd
 import os
@@ -84,7 +84,10 @@ for model in models:
     print(colored("Using model No. " + str(model) + " for prediction", "yellow"))
     predicted_results = Predict(model_id = model).predict(fixtures_to_predict = fixtures_and_data_for_prediction)
     print(colored(predicted_results, "blue"))
-    # predicted_results.to_csv(predictions_dir + model + "_predicted_results.csv", index_label = False, index = False)
+    predictions_file_output_loc = predictions_dir + model + "_predicted_results.csv"
+    if user_file_overwrite_check(predictions_file_output_loc):
+        predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
+
 
 # cleanup the saved_models dir
 Cleanup()

@@ -1,3 +1,7 @@
+"""
+Miners are objects used to mine data that APPLE runs off
+"""
+
 from selenium import webdriver
 import pandas as pd
 import numpy as np
@@ -8,6 +12,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from fuzzywuzzy import process
 import re
+from datetime import datetime
+from datetime import timedelta
+import os
+
+
+def user_file_overwrite_check(filepath):
+    if os.path.exists(filepath):
+        user_choice = input("The filepath {} already exists, do you want to overwrite it? (y/n)".format(filepath))
+        user_choice = user_choice.lower()
+        # user wants to overwrite
+        if user_choice == "y":
+            return True
+        elif user_choice == "n":
+            return False
+        else:
+            user_file_overwrite_check(filepath)
+    else:
+        return True
 
 
 def convert_to_decimal(odds):
@@ -81,8 +103,11 @@ def odds_missing_warnings(df):
 
 class MineOdds(object):
     """"
-    Class to mine odds for that are used for predictions
+    Miner to mine odds for that are used for predictions
     """
+    def __str__(self):
+        return "MineOdds Miner"
+
     def __init__(self, week):
         print(colored(
             "WARNING: Mine is currently undergoing testing an cannot be relied upon for data mining at present. Please do not use"))
@@ -238,9 +263,8 @@ class MineOdds(object):
         self.bet365()
         self.driver.close()
 
-
         # mergeing / joining DFs
-        intermediate_1 = fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
+        intermediate_1 = self.fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
         intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
         output = intermediate_2.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
 
@@ -249,13 +273,45 @@ class MineOdds(object):
 
         output.to_json(self.path + "/data/mined_data/w" + str(self.week) + "f.json")
 
-class MineFixture(object):
+
+class MineFixtures(object):
+    """
+
+    """
 
     def __str__(self):
-        return "MineFixture Miner object"
+        return "MineFixture Miner"
 
     def __init__(self, start_date, period, label):
-        self.start_date = start_date
+        """
+        :param start_date: str
+                date in DD-MM-YYYY format, start_date is the first date you want to grab fixtures for
+        :param period: int
+                number of days you wnant to grab fixtures for i.e. if you want to get the next 10 days of fixtures after
+                "20-07-2020" period should be 10 which will grab fixtures from 20-07-2020 -> 30-07-2020 inclusive
+        :param label: str
+                name of the directory you want to create to hold the mined fixtures, the filename will also use this label
+        """
+        self.start_date = datetime.strptime(start_date, "%d-%m-%Y")
         self.period = period
-        slef.label = label
+        self.label = label
+        self.end_date = self.start_date + timedelta(days = self.period )
+        self.url = "https://www.premierleague.com/fixtures"
+        self.driver = webdriver.Safari()
+        self.path = str(Path().absolute())
+        self.fixtures_output_file_loc = label + "up.csv"
+
+    def mine_fixtures(self):
+        # if the file does exist already ask the user if they want to overwrite it
+        if user_file_overwrite_check(self.fixtures_output_file_loc):
+            self.driver.get(url = self.url)
+            wait = WebDriverWait(self.driver, 30)
+            wait.until(EC.visibility_of_element_located((By.TAG_NAME, "div.data-competition-matches-list")))
+            dates = self.driver.find_elements_by_class_name("div.data-competition-matches-list")
+            for i in dates:
+                print(i.text)
+
+        else:
+            print("File will not be overwritten, shutting down miner")
+
 
