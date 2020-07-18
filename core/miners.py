@@ -18,10 +18,15 @@ import os
 
 
 def user_file_overwrite_check(filepath):
+    """
+    Def used to check if a user wants to overwrite a file
+    :param filepath: str
+            filepath
+    :return: boolean
+    """
     if os.path.exists(filepath):
         user_choice = input("The filepath {} already exists, do you want to overwrite it? (y/n)".format(filepath))
         user_choice = user_choice.lower()
-        # user wants to overwrite
         if user_choice == "y":
             return True
         elif user_choice == "n":
@@ -34,11 +39,11 @@ def user_file_overwrite_check(filepath):
 
 def convert_to_decimal(odds):
     """
-    Converts brtish style odds to decimal
-    :param odds: list of strings
-    a list of the british style odds to convert to
-    :return: list of floats
-    a list of the decimal odds
+    Converts British style odds to decimal
+    :param odds: list
+            a list of the british style odds to convert (odds should be str)
+    :return: list
+            a list of the decimal odds (odds should be floats)
     """
     # catch "EVS" string that william hill sometimes use
     reformatted_odds = ['2.0' if x == "EVS" else x for x in odds]
@@ -64,9 +69,9 @@ def team_cleaner(team):
     name needs to be cleaned to match the team name in the train data.
 
     :param team: str
-    name of a team
+            name of a team
     :return: str
-    cleaned name consistient with data used to train models.
+            cleaned name consistent with data used to train models.
     """
     teams_19_20 = ["Arsenal", "Aston Villa", "Bournemouth", "Brighton", "Burnley", "Chelsea", "Crystal Palace",
                    "Everton",
@@ -275,9 +280,6 @@ class MineOdds(object):
 
 
 class MineFixtures(object):
-    """
-
-    """
 
     def __str__(self):
         return "MineFixture Miner"

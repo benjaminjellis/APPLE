@@ -141,7 +141,7 @@ class Backtest(object):
             rawdata.pop("AwayTeam")
             rawdata.pop("HomeTeam")
         # this block is also used in predict.py, this should be packed up into a function and stored
-        # somewhere in core
+        # somewhere in core to reduce code duplication
         try:
             backtesting_data = rawdata[exp_features]
         except KeyError:

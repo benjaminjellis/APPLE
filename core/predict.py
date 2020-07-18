@@ -17,7 +17,8 @@ class Predict(object):
     def __init__(self, model_id):
 
         """
-        :param model_id: str - unique model id
+        :param model_id: str
+                unique model id
         """
         self.path = str(pathlib.Path().absolute())
         self.model_id = model_id
@@ -30,8 +31,10 @@ class Predict(object):
 
     def predict(self, fixtures_to_predict):
         """
-        :param fixtures_to_predict: str - name of file containing the fixtures to predict
-        :return: dataframe of probabilties
+        :param fixtures_to_predict: str
+                name of file containing the fixtures to predict
+        :return: dataframe
+                dataframe of probabilities
         """
 
         fixtures_to_predict["fixture"] = fixtures_to_predict["HomeTeam"] + " v " + fixtures_to_predict["AwayTeam"]

@@ -35,10 +35,9 @@ class Train(object):
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
-        # print("downloading...")
+        # grab the latest data
         urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1920/E0.csv", data_dir + "1920.csv")
         urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1819/E0.csv", data_dir + "1819.csv")
-        # print("done")
 
         raw_data_18_19 = pd.read_csv(data_dir + "1920.csv")
         raw_data_19_20 = pd.read_csv(data_dir + "1819.csv")
@@ -55,11 +54,11 @@ class Train(object):
         :return: nothing
         """
 
-        # unqiue id to label model with
+        # unique id to label model with
         model_id = uuid.uuid1()
         model_id = str(model_id)
 
-        # directory to output the model to as well as various other files
+        # directory to output the model to, as well as various other files
         model_output_dir = self.path + "/saved_models/" + model_id + "/"
         if not os.path.exists(model_output_dir):
             os.makedirs(model_output_dir)
@@ -73,11 +72,11 @@ class Train(object):
         # remove the target
         train_labels = train_raw.pop("FTR")
         train = train_raw
-        # turn raw data a tf dataset
+        # turn raw data into tf dataset
         train_tensor = tf.data.Dataset.from_tensor_slices((train.values, train_labels.values))
         train_final = train_tensor.batch(5)
 
-        # preapre test data
+        # prepare test data
         test_labels = test_raw.pop("FTR")
         test_length = test_raw.shape[0]
         test_labels = test_labels.to_numpy()
@@ -115,7 +114,7 @@ class Train(object):
 
         today = date.today().strftime("%Y%m%d")
 
-        # output the model, the columns and scalar
+        # output the model, the columns and scaler coeffs
         model.save(model_output_dir + model_id + ".h5")
         ord_cols_df.to_csv(model_output_dir + model_id + ".csv", index_label = False, index = False)
         scaler_coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label = False, index = False)

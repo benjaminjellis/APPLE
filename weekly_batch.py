@@ -4,7 +4,7 @@ Script used to train models on new data, back-test saved models, and predict upc
 
 from core.train import Train
 from core.predict import Predict
-from core.miners import MineOdds, MineFixture, user_file_overwrite_check
+from core.miners import MineOdds, MineFixtures, user_file_overwrite_check
 from core.backtest import Backtest
 import pandas as pd
 import os
@@ -23,9 +23,7 @@ path = str(Path().absolute())
 
 models_to_train = ["model 1", "model 2", "model 3"]
 
-# not training until implementation of k cross fold verification is implemented
-
-# train all 3 models on the latest data
+# train a model of all three 3 types models on the latest data
 print(colored("Training models on new data....", "green"))
 Train(model_type = "model 1").train(epochs = 22, verbose = True)
 Train(model_type = "model 2").train(epochs = 22, verbose = True)
@@ -60,7 +58,7 @@ fixtures_file = predictions_dir + fixtures_file_name
 # load in the fixtures
 fixtures_to_predict = pd.read_csv(fixtures_file)
 
-# location and name of mined data
+# location and name of mined data used to get features for model
 mined_data_dir = path + "/data/mined_data/"
 mined_data_file = mined_data_dir + mined_data
 name, file_extension = mined_data.split(".")
@@ -80,6 +78,7 @@ fixtures_and_data_for_prediction = fixtures_to_predict.merge(mined_data_to_merge
 week = fixtures_and_data_for_prediction['Week'].to_list()
 week = list(set(week))
 
+# use the top performing saved model to predict the fixtures
 for model in models:
     print(colored("Using model No. " + str(model) + " for prediction", "yellow"))
     predicted_results = Predict(model_id = model).predict(fixtures_to_predict = fixtures_and_data_for_prediction)

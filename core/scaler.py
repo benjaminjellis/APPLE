@@ -1,5 +1,5 @@
 """
-Function used to scale input data
+Functions used to scale input data
 """
 
 import pandas as pd
