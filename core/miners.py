@@ -118,6 +118,7 @@ class MineOdds(object):
             "WARNING: Mine is currently undergoing testing an cannot be relied upon for data mining at present. Please do not use"))
         self.driver = webdriver.Safari()
         self.path = str(Path().absolute())
+        self.week = week
 
         # load fixtures to save odds for
         try:

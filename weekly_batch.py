@@ -12,7 +12,7 @@ from termcolor import colored
 from utilities.cleanup import Cleanup
 from pathlib import Path
 
-week_number = "34"
+week_number = "35"
 
 # load in the fixtures
 fixtures_file_name = "week" + week_number + "up.csv"
