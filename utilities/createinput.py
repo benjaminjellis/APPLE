@@ -8,7 +8,7 @@ import pathlib
 path = str(pathlib.Path().absolute().parent)
 
 # load in user predictions
-fix_cols_data = pd.read_csv(path + "/data/predictions/week34/week34up.csv")
+fix_cols_data = pd.read_csv(path + "/data/predictions/week36/week36up.csv")
 
 # use user predictions to grab fixtures
 Date = fix_cols_data['Date'].tolist()
@@ -21,14 +21,14 @@ fix_lists = [Date, Week, Time, HomeTeam, AwayTeam]
 fix_cols = ['Date', 'Week', 'Time', 'HomeTeam', 'AwayTeam']
 
 # input odds here for the fixtures
-B365H = ["2/7", "1/8", "7/2", "1/7" , "7/2",  "11/4", "19/20", "19/20", "17/2",  "11/8"]
-B365D = ["2/7", "17/2", "12/5", "8/1", "11/4", "14/5","13/5", "23/10", "4/1", "2/1" ]
-B365A = ["2/7", "16/1", "5/6", "14/1", "3/4",  "17/20","11/4", "3/1" , "1/3",  "9/4" ]
+B365H = ["10/11", "13/10", "17/20", "5/1",  "6/5" ,  "2/1",   "1/12", "13/2", "23/20",  "2/1"]
+B365D = ["14/5", "12/5",   "14/5",  "16/5",  "29/10", "10/1", "10/1", "17/4", "5/2",    "13/5"]
+B365A = ["14/5", "21/10",  "3/1",   "11/20", "19/10", "25/1", "25/1", "4/11",  "23/10", "13/10"]
 
 
-IWH = ["1.30", "1.12", "4.70", "1.15", "4.50", "3.80", "2.00", "2.00", "9.30", "2.40"]
-IWD = ["5.60", "9.00", "3.25", "8.40", "3.70", "3.85", "3.55", "3.30", "4.85", "3.00"]
-IWA = ["9.50", "20.00", "1.87", "15.50", "1.80", "1.90", "3.70", "3.95", "1.36", "3.30"]
+IWH = ["1.95", "2.30", "1.95", "6.00", "2.25", "3.20", "1.05", "7.00", "2.15", "3.00"]
+IWD = ["3.80", "3.30", "3.45", "3.95", "3.35", "3.30", "14.0", "4.80", "3.35", "3.40"]
+IWA = ["3.75", "3.05", "4.00", "1.57", "3.00", "2.25", "35.0", "1.43", "3.40", "2.30"]
 
 odss_cols = ['B365A', 'B365D', 'B365H', 'IWA', 'IWD', 'IWH']
 odss_lists = [B365A, B365D, B365H, IWA, IWD, IWH]
@@ -56,12 +56,9 @@ for x in odss_lists:
 out_lists = fix_lists + odss_lists
 out_cols = fix_cols + odss_cols
 outputs = {}
-print(out_lists)
+
 for i in range(len(out_lists)):
-    print(out_cols[i])
-    print(len(out_cols[i]))
-    print(len(out_lists[i]))
     outputs.update({out_cols[i]: out_lists[i]})
 
 df = pd.DataFrame(data = outputs)
-df.to_json(path + "/data/mined_data/w44f_incomp.json")
+df.to_json(path + "/data/mined_data/w35f_incomp.json")

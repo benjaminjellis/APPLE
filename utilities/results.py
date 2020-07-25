@@ -107,7 +107,6 @@ class Results(Predictions):
 
         if firstw == secondw == thridw == fourthw:
             print("For " + self.week + " it's a four way tie \n\n\n")
-            weekly_winner = firstw + ", " + secondw + ", " + thridw + ", " + ", " + fourthw
         if firstw == secondw == thridw:
             weekly_winner = firstw + ", " + secondw + ", " + thridw
             print("For " + self.week + " it's a three way tie between: " + weekly_winner + "\n\n\n")
