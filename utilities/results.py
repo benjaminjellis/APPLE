@@ -20,36 +20,38 @@ def correct_pred(col1, col2):
 
 class Predictions(object):
 
-    def __init__(self, week):
+    def __init__(self, week = None):
         self.path = str(pathlib.Path().absolute())
         self.running_results_dir = self.path + "/data/predictions/running/"
-        self.running_results_log = self.running_results_dir + "results_log.csv"
-        self.week = week
+        self.running_results_log_loc = self.running_results_dir + "results_log.csv"
 
-        predictions_dir = self.path + "/data/predictions/" + week + "/"
+        if week is not None:
+            self.week = week
 
-        # load in the APPLE predictions
-        for f in glob.glob(predictions_dir + "*_predicted_results.csv"):
-            apple_pred = pd.read_csv(f)
+            predictions_dir = self.path + "/data/predictions/" + week + "/"
 
-        # load in user predictions
-        uspred_loc = predictions_dir + week + "up.csv"
-        upred = pd.read_csv(uspred_loc)
-        upred["Fixture"] = upred["HomeTeam"] + " v " + upred["AwayTeam"]
+            # load in the APPLE predictions
+            for f in glob.glob(predictions_dir + "*_predicted_results.csv"):
+                apple_pred = pd.read_csv(f)
 
-        weekly_pred = apple_pred.copy()
+            # load in user predictions
+            uspred_loc = predictions_dir + week + "up.csv"
+            upred = pd.read_csv(uspred_loc)
+            upred["Fixture"] = upred["HomeTeam"] + " v " + upred["AwayTeam"]
 
-        # aggregate weekly predictions
-        weekly_pred["DD Prediction"] = upred["DD Prediction"]
-        weekly_pred["JR Prediction"] = upred["JR Prediction"]
-        weekly_pred["MW Prediction"] = upred["MW Prediction"]
-        weekly_pred["Date"] = upred["Date"]
+            weekly_pred = apple_pred.copy()
 
-        # format df for display
-        weekly_pred = weekly_pred[
-            ["Fixture", "Date", "APPLE Prediction", "DD Prediction", "JR Prediction", "MW Prediction"]]
+            # aggregate weekly predictions
+            weekly_pred["DD Prediction"] = upred["DD Prediction"]
+            weekly_pred["JR Prediction"] = upred["JR Prediction"]
+            weekly_pred["MW Prediction"] = upred["MW Prediction"]
+            weekly_pred["Date"] = upred["Date"]
 
-        self.weekly_pred = weekly_pred
+            # format df for display
+            weekly_pred = weekly_pred[
+                ["Fixture", "Date", "APPLE Prediction", "DD Prediction", "JR Prediction", "MW Prediction"]]
+
+            self.weekly_pred = weekly_pred
 
     def show(self):
         display(self.weekly_pred)
@@ -57,7 +59,7 @@ class Predictions(object):
 
 class Results(Predictions):
 
-    def aggregate(self):
+    def weekly(self):
         # load in actual resutls
         ftr_loc = self.path + "/data/results/" + self.week + "res.csv"
         ftr = pd.read_csv(ftr_loc)
@@ -69,7 +71,7 @@ class Results(Predictions):
 
         # export the results to a running log
         try:
-            log = pd.read_csv(self.running_results_log)
+            log = pd.read_csv(self.running_results_log_loc)
             log_update = self.weekly_pred
             log = pd.concat([log, log_update], ignore_index=True)
             log.drop_duplicates(subset=None, keep='first', inplace=True)
@@ -77,14 +79,13 @@ class Results(Predictions):
         except FileNotFoundError:
             if not os.path.exists(self.running_results_dir):
                 os.mkdir(self.running_results_dir)
-            Path(self.running_results_log).touch()
+            Path(self.running_results_log_loc).touch()
             log = self.weekly_pred
 
-        log.to_csv(self.running_results_log, index=False, index_label=False)
+        log.to_csv(self.running_results_log_loc, index=False, index_label=False)
 
         # aggregate weekly results and sum to get accuracy of each person's predictions
-        self.weekly_pred['APPLE'] = self.weekly_pred.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']),
-                                                           axis=1)
+        self.weekly_pred['APPLE'] = self.weekly_pred.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
         self.weekly_pred['DD'] = self.weekly_pred.apply(lambda x: correct_pred(x['DD Prediction'], x['FTR']), axis=1)
         self.weekly_pred['JR'] = self.weekly_pred.apply(lambda x: correct_pred(x['JR Prediction'], x['FTR']), axis=1)
         self.weekly_pred['MW'] = self.weekly_pred.apply(lambda x: correct_pred(x['MW Prediction'], x['FTR']), axis=1)
@@ -163,3 +164,22 @@ class Results(Predictions):
             print("Overall it's a tie between: " + running_winner)
         else:
             print("Overall the most accurate predictor is " + firstr)
+
+    def running(self):
+        full_res_log = pd.read_csv(self.running_results_log_loc)
+        display(full_res_log)
+        no_matches = full_res_log.shape[0]
+
+        full_res_log['APPLE'] = full_res_log.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis = 1)
+        full_res_log['DD'] = full_res_log.apply(lambda x: correct_pred(x['DD Prediction'], x['FTR']), axis = 1)
+        full_res_log['JR'] = full_res_log.apply(lambda x: correct_pred(x['JR Prediction'], x['FTR']), axis = 1)
+        full_res_log['MW'] = full_res_log.apply(lambda x: correct_pred(x['MW Prediction'], x['FTR']), axis = 1)
+
+        c = full_res_log.sum()
+        c = c[['APPLE', 'DD', 'JR', "MW"]]
+
+        eos_results = pd.DataFrame({' ': c.index, 'Total Correct Predictions': c.values})
+        eos_results['Accuracy of Total Predictions (%)'] = (eos_results['Total Correct Predictions'] / no_matches) * 100
+        eos_results = eos_results.sort_values(by = 'Accuracy of Total Predictions (%)', ascending = False).reset_index(
+            drop = True)
+        display(eos_results)

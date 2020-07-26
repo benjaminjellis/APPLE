@@ -1,11 +1,11 @@
-Date,Week,Time,HomeTeam,AwayTeam,DD Prediction,JR Prediction,MW Prediction
-,,,Arsenal,Watford,D,H,H
-,,,Burnley,Brighton,A,H,H
-,,,Chelsea,Wolves,D,D,D
-,,,Crystal Palace,Tottenham,D,A,A
-,,,Everton,Bournemouth,H,H,H
-,,,Leicester,Man United,H,A,A
-,,,Man City,Norwich,H,H,H
-,,,Newcastle,Liverpool,A,A,A
-,,,Southampton,Sheffield United,H,D,A
-,,,West Ham,Aston Villa,D,D,H
+"Date","Week","Time","HomeTeam","AwayTeam","DD Prediction","JR Prediction","MW Prediction"
+"26/07/2020","","","Arsenal","Watford","D","H","H"
+"26/07/2020","","","Burnley","Brighton","A","H","H"
+"26/07/2020","","","Chelsea","Wolves","D","D","D"
+"26/07/2020","","","Crystal Palace","Tottenham","D","A","A"
+"26/07/2020","","","Everton","Bournemouth","H","H","H"
+"26/07/2020","","","Leicester","Man United","H","A","A"
+"26/07/2020","","","Man City","Norwich","H","H","H"
+"26/07/2020","","","Newcastle","Liverpool","A","A","A"
+"26/07/2020","","","Southampton","Sheffield United","H","D","A"
+"26/07/2020","","","West Ham","Aston Villa","D","D","H"
