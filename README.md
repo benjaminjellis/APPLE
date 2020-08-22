@@ -1,24 +1,15 @@
 # APPLE  [![PEP8](https://img.shields.io/badge/code%20style-pep8-orange.svg)](https://www.python.org/dev/peps/pep-0008/)
 
 
-**A**rtificial neural networks for **P**rediction of **P**remier **L**eague gam**E**s, **APPLE** for short, is a project to utilise ANNs to create models that can be used to predict Premier League games.
-
-
-## Motivation 
-
-After discovering a source of data for Premier League games I attempted to build a few ANNs to predict games. This morphed into APPLE which is now a whole project built around the ANNs. 
+**A**rtificial neural networks for **P**rediction of **P**remier **L**eague gam**E**s, **APPLE** for short, is a project to utilise ANNs to create models that can be used to predict Premier League games. APPLE uses betting odds as it's source data and it currently being extended to incorporate other data sources to improve prediction outcomes.  
 
 
 ## Status
-APPLE is currently under Phase 1 real world testing where it's being tested aginast human predictors of games. The weekly predictions and resutls so far of this testing can be found in weekly results.ipynb. 
+APPLE is currently under post Phase 1 refactoring and development. 
 
-APPLE is also under continuous development, currently the following 3 areas are being developed:
-- Hyperparamter Opttimisation of models 
-- Automation of data mining 
-- Implementation of backtesting regime for continuous monitoring of model performance
+Phase 1 was a phase of real world testing where APPLE was tested against 3 human predictors of games. Evaluation of Phase 1 can be found in the notebook [here!](https://github.com/benjaminjellis/APPLE/blob/master/docs/Phase_1/APPLE_Phase1_evaluation_results.ipynb)
 
-Phase 1 is due to end with the 19/20 Premier League season and at this point APPLE will be upgraded ahead of the 20/21 season
-
+With the start of the 2020/21 Premier League season will come Phase 2 which will be another phase of real world testing while APPLE is also continuously upgraded. 
 
 ## Credits
-My thanks to everyone at https://www.football-data.co.uk/ for providing the data APPLE is based on 
+My thanks to everyone at https://www.football-data.co.uk/ for providing the data APPLE is based on
