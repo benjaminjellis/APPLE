@@ -57,7 +57,7 @@ class WeeklyBatch(object):
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "inner")
 
         # results directory
-        self.results_dir = self.path + "/Results/"
+        self.results_dir = self.path + "/results/"
 
         if not os.path.exists(self.results_dir):
             os.mkdir(self.results_dir)
