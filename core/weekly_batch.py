@@ -4,16 +4,21 @@ Script used to train models on new data, back-test saved models, and predict upc
 
 from core.train import Train
 from core.predict import Predict
-from core.miners import MineOdds, MineFixtures, user_file_overwrite_check
-from core.backtest import Backtest
+from core.miners import user_file_overwrite_check
+from core.cleanup import Cleanup
 import pandas as pd
 import os
 from termcolor import colored
-from utilities.cleanup import Cleanup
 from pathlib import Path
 
 
 def load(filepath):
+    """
+    Def to load eitheir csv or json
+    :param filepath: str
+            filepath of file to load
+    :return: a dataframe of the file pointed to in filepath
+    """
     name, file_extension = filepath.split(".")
     if file_extension == "csv":
         loaded_file = pd.read_csv(filepath)
@@ -27,13 +32,21 @@ def load(filepath):
 class WeeklyBatch(object):
 
     def __init__(self, fixtures_to_predict, data_for_predictions, job_name):
+        """
+        :param fixtures_to_predict: str
+                filepath of the file that contaions the fixtures you want to predict
+        :param data_for_predictions: str
+                filepath for the data the model will use for predictions
+        :param job_name: str
+                name / ID of the job, this will determine the name of the output dir
+        """
         # define path for making dirs and navigating
         self.path = str(Path().absolute())
 
         fixtures_to_predict = self.path + "/" + fixtures_to_predict
         data_for_predictions = self.path + "/" + data_for_predictions
         # load in the fixtures to predict, these are also user predictions
-        self.fixtures_to_predict = load(filepath =fixtures_to_predict )
+        self.fixtures_to_predict = load(filepath = fixtures_to_predict)
 
         # load in the data to use to make predictions
         data_for_predictions_to_merge = load(filepath = data_for_predictions)
@@ -53,8 +66,16 @@ class WeeklyBatch(object):
         if not os.path.exists(self.job_result_dir):
             os.mkdir(self.job_result_dir)
 
-
-    def run(self, backtest = True, cleanup = True):
+    def run(self, backtest = True, cleanup = True, upper_limit = None, prct_to_remove = None):
+        """
+        :param prct_to_remove:
+        :param upper_limit:
+        :param backtest: boolean
+                Whether or not to run backtest of all saved models on new data
+        :param cleanup: boolean
+                Whether or not to
+        :return:
+        """
         # train a model of all three 3 model types  on the latest data
         print(colored("Training models on new data....", "green"))
         Train(model_type = "model 1").train(epochs = 22, verbose = True)
@@ -94,8 +115,4 @@ class WeeklyBatch(object):
 
         if cleanup:
             # cleanup the saved_models dir
-            Cleanup()
-
-
-
-
+            Cleanup(upper_limit = upper_limit, prct_to_remove = prct_to_remove)

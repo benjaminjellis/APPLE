@@ -11,13 +11,15 @@ import pathlib
 
 class Cleanup(object):
 
-    def __init__(self):
+    def __init__(self, upper_limit = None, prct_to_remove = None):
         path = str(pathlib.Path().absolute())
 
         # upper limit of models to retain
-        upper_limit = 15
+        if upper_limit is None:
+            upper_limit = 15
         # percenatage of model to remove
-        prct_to_remove = 50
+        if prct_to_remove is None:
+            prct_to_remove = 50
 
         if upper_limit < 15:
             raise ValueError("ValueError: upper limit must be at least 15")
@@ -29,7 +31,7 @@ class Cleanup(object):
         log_loc = saved_models_dir + "model_log.csv"
         log = pd.read_csv(log_loc)
 
-        # find the worst perfmoring models
+        # find the worst performing models
         log = log.sort_values(by="Test Acc", ascending=True)
         dimen = log.shape
         no_models_stored = dimen[0]
