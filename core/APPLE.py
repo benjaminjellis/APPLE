@@ -1,42 +1,27 @@
 """
-Script used to train models on new data, back-test saved models, and predict upcoming fixtures
+API to use APPLE
 """
 
 from core.train import Train
 from core.predict import Predict
 from core.miners import user_file_overwrite_check
 from core.cleanup import Cleanup
+from core.backtest import Backtest
+from core.loaders import load_json_or_csv
 import pandas as pd
 import os
 from termcolor import colored
 from pathlib import Path
 
 
-def load(filepath):
-    """
-    Def to load eitheir csv or json
-    :param filepath: str
-            filepath of file to load
-    :return: a dataframe of the file pointed to in filepath
-    """
-    name, file_extension = filepath.split(".")
-    if file_extension == "csv":
-        loaded_file = pd.read_csv(filepath)
-    elif file_extension == "json":
-        loaded_file = pd.read_json(filepath)
-    else:
-        raise Exception("File format " + file_extension + " not supported for mined data to predict")
-    return loaded_file
-
-
-class WeeklyBatch(object):
+class APPLE(object):
 
     def __init__(self, fixtures_to_predict, data_for_predictions, job_name):
         """
         :param fixtures_to_predict: str
-                filepath of the file that contaions the fixtures you want to predict
+                filepath of the file that contains the fixtures you want to predict
         :param data_for_predictions: str
-                filepath for the data the model will use for predictions
+                filepath for the data a model will use for predictions
         :param job_name: str
                 name / ID of the job, this will determine the name of the output dir
         """
@@ -46,10 +31,10 @@ class WeeklyBatch(object):
         fixtures_to_predict = self.path + "/" + fixtures_to_predict
         data_for_predictions = self.path + "/" + data_for_predictions
         # load in the fixtures to predict, these are also user predictions
-        self.fixtures_to_predict = load(filepath = fixtures_to_predict)
+        self.fixtures_to_predict = load_json_or_csv(filepath = fixtures_to_predict)
 
         # load in the data to use to make predictions
-        data_for_predictions_to_merge = load(filepath = data_for_predictions)
+        data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
 
         # extract data for predictions from mined data by checking which fixtures
         # to predict
@@ -66,31 +51,26 @@ class WeeklyBatch(object):
         if not os.path.exists(self.job_result_dir):
             os.mkdir(self.job_result_dir)
 
-    def run(self, backtest = True, cleanup = True, upper_limit = None, prct_to_remove = None):
+    def run(self):
         """
-        :param prct_to_remove:
-        :param upper_limit:
-        :param backtest: boolean
-                Whether or not to run backtest of all saved models on new data
+        Used to make predictions on
         :param cleanup: boolean
-                Whether or not to
-        :return:
+                Whether or not to cleanup the saved_models directory
+        :param upper_limit: int
+                If cleanup is set to True, upper_limit is used to specify the maxium number
+                of saved_models to retain, defaults to 15
+        :param prct_to_remove: int
+                If cleanup is set to True, prct_to_remove is used to specify the number
+                of models to remove as a percentage of upper_limit
+        :return: Nothing, produces predictions and outputs them to file
         """
+
         # train a model of all three 3 model types  on the latest data
         print(colored("Training models on new data....", "green"))
         Train(model_type = "model 1").train(epochs = 22, verbose = True)
         Train(model_type = "model 2").train(epochs = 22, verbose = True)
         Train(model_type = "model 3").train(epochs = 22, verbose = True)
         print(colored("Training completed", "green"))
-
-        # no backtesting for the moment, needs to be rewritten
-        """
-        if backtest:
-            # back test all saved models on new data
-            back_tester = Backtest(week = week_number)
-            back_tester.all()
-            back_tester.commit_log_updates()
-        """
 
         # interrogate the model log to pick the best models compiled thus far
         log_loc = self.path + "/saved_models/"
@@ -113,6 +93,18 @@ class WeeklyBatch(object):
             if user_file_overwrite_check(predictions_file_output_loc):
                 predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
 
-        if cleanup:
-            # cleanup the saved_models dir
-            Cleanup(upper_limit = upper_limit, prct_to_remove = prct_to_remove)
+
+    def backtest(self, data_to_backtest_on, ftrs = None):
+        """
+        :param ftrs:
+        :param data_to_backtest_on: list of str or str
+                filepath of single data file or list of filepaths to data that will be used for backtesting
+        :return:
+        """
+        back_tester = Backtest(data_to_backtest_on = data_to_backtest_on, ftrs = ftrs)
+        back_tester.all()
+        back_tester.commit_log_updates()
+
+    def cleanup(self, upper_limit = None, prct_to_remove = None):
+        # cleanup the saved_models dir
+        Cleanup(upper_limit = upper_limit, prct_to_remove = prct_to_remove)

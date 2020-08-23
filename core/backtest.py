@@ -3,15 +3,15 @@ Backtest is a class used to backtest and thus evaluate saved models on data (min
 The class then updates the model log with the backtesing results
 """
 
-
 import tensorflow as tf
 from pathlib import Path
 import pandas as pd
 from core.scaler import scale_df_with_params
+from core.loaders import load_json_or_csv, load_or_aggregate
+from core.data_processing import formatting_for_passing_to_model
 from termcolor import colored
 import numpy as np
-from os import listdir
-from os.path import isfile, join
+
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -20,11 +20,11 @@ def log_update(model_id, results, model_log):
     Function used to update each model entry in the model log once the
     model has been backtested against new data
     :param model_id: str
-            - uniqe model id to update log for
+            uniqe model id to update log for
     :param results: tuple
-            - tuple of length 2 with the test loss and test accuracy in that order
+            tuple of length 2 with the test loss and test accuracy in that order
     :param model_log: dataframe
-            - the model log as a dataframe to update
+            the model log as a dataframe to update
     :return: nothing
     """
     # get the row number for the model
@@ -34,78 +34,29 @@ def log_update(model_id, results, model_log):
     model_log.at[row, "Test Acc"] = results[1]
 
 
-def load_and_aggregate(dir_to_aggregate, week):
-
-    """
-    Used to load all data files from specified dir and aggregate them into one dataframe
-    :param dir_to_aggregate: str
-            path of the directory to load and aggregate files form
-    :return: dataframe
-            dataframe of the loaded and aggregated data files
-    """
-
-    def read_json_or_csv(filepath):
-        path_ignore, extension = filepath.split(".")
-        if extension == "json":
-            read_df = pd.read_json(filepath)
-            return read_df
-        elif extension == "csv":
-            read_df = pd.read_csv(filepath)
-            return read_df
-        else:
-            raise Exception("Mined data file type not recognised: " + str(filepath))
-
-    # list files in dir_to_aggregate
-    files_in_dir = [f for f in listdir(dir_to_aggregate) if isfile(join(dir_to_aggregate, f))]
-
-    # remove .DS_Store from the list of files in dir_to_aggregate
-    while '.DS_Store' in files_in_dir:
-        files_in_dir.remove('.DS_Store')
-
-    if "mined_data" in dir_to_aggregate:
-        files_in_dir.remove("w" + week + "f.json")
-
-    print(files_in_dir)
-
-    # load first file in the dir_to_aggregate
-    aggregated_dataset = read_json_or_csv(dir_to_aggregate + files_in_dir[0])
-
-    # remove first file from the list of mined data files
-    files_in_dir.pop(0)
-
-    # loop through remaining data files and append them to self.mined_data
-    for file in files_in_dir:
-        loaded_file = read_json_or_csv(dir_to_aggregate + file)
-        aggregated_dataset = pd.concat([aggregated_dataset, loaded_file], ignore_index = True)
-
-    return aggregated_dataset
-
-
 class Backtest(object):
 
-    def __init__(self, week):
+    def __init__(self, data_to_backtest_on, ftrs = None):
         """
         Constructor loads the model log, aggregates data to make backtesting dataset, maps locations of saved models
         """
         # load model log
-        self.week_being_predicted = week
         self.path = str(Path().absolute())
-        self.model_log_loc = self.path + "/saved_models/"
-        self.model_log_path = self.model_log_loc + "model_log.csv"
-        self.model_log = pd.read_csv(self.model_log_path)
-        # get location of saved models
+        # location of saved models
         self.saved_models_dir = self.path + "/saved_models/"
+        self.model_log_loc = self.saved_models_dir + "model_log.csv"
+        self.model_log = load_json_or_csv(self.model_log_loc)
 
-        # load and aggreate all mined data
-        mined_data_dir = self.path + "/data/mined_data/"
-        mined_data_aggregated = load_and_aggregate(mined_data_dir, week = self.week_being_predicted)
+        # load and aggregate all backtesting data to be used
+        mined_data_aggregated = load_or_aggregate(data_to_backtest_on)
 
-        # load and aggreate all ftrs
-        ftrs_dir = self.path + "/data/results/"
-        ftrs_aggregated = load_and_aggregate(ftrs_dir, week = self.week_being_predicted)
-
-        # inner join to get raw backtesing data
-        self.raw_backtesting_data = pd.merge(mined_data_aggregated, ftrs_aggregated, on = ["HomeTeam", "AwayTeam"])
+        if ftrs is not None:
+            # load and aggreate all ftrs
+            ftrs_aggregated = load_or_aggregate(ftrs)
+            self.raw_backtesting_data = pd.merge(mined_data_aggregated, ftrs_aggregated, on = ["HomeTeam", "AwayTeam"])
+        else:
+            self.raw_backtesting_data = mined_data_aggregated
+        # check here if the FTRs are provided
 
     def model(self, model_id):
         """
@@ -140,47 +91,8 @@ class Backtest(object):
 
             rawdata.pop("AwayTeam")
             rawdata.pop("HomeTeam")
-        # this block is also used in predict.py, this should be packed up into a function and stored
-        # somewhere in core to reduce code duplication
-        try:
-            backtesting_data = rawdata[exp_features]
-        except KeyError:
-            key_present = list(rawdata.columns)
-            keys_missing = []
 
-            for key in exp_features:
-                if key not in key_present:
-                    keys_missing.append(key)
-
-            length = len(keys_missing)
-            track = 0
-            shape = rawdata.shape
-
-            for keys in keys_missing:
-                if keys[:2] == "at" or "ht":
-                    track += 1
-
-            print(colored("Attempting to deal with missing datapoint(s)....", 'red'))
-
-            entry = np.zeros((shape[0], 1))
-
-            if length == track:
-                print(colored("Fixing input data....", 'red'))
-                for key in keys_missing:
-                    rawdata[key] = entry
-                try:
-                    backtesting_data = rawdata[exp_features]
-                    print(colored("Input data fixed", 'green'))
-                except KeyError:
-                    print(colored("ERROR - Missing datapoint(s): ", 'red'))
-                    print(colored("Attempt was made to fix input data, but it wasn't possible", 'red'))
-
-            else:
-                print(colored("ERROR - input data cannot be handled", 'red'))
-                print(
-                    colored(model_id + " can't be used to make predicitons wihtout the above, datapoint(s)",
-                            "red"))
-                raise Exception
+        backtesting_data = formatting_for_passing_to_model(rawdata = rawdata, exp_features = exp_features, model_id = model_id)
 
         # categorical encoding for FTR col
         result_cleanup = {"FTR": {"H": 0, "A": 1, "D": 2}}
@@ -226,4 +138,4 @@ class Backtest(object):
         Method to commit log updates made by any instance to file
         :return: nothing
         """
-        self.model_log.to_csv(self.model_log_path, index_label = False, index = False)
+        self.model_log.to_csv(self.model_log_loc, index_label = False, index = False)

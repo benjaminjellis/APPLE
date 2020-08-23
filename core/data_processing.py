@@ -5,6 +5,8 @@ Defs used to do some data processing before training of models
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from core.scaler import scale_df
+import numpy as np
+from termcolor import colored
 
 
 def preprocessing(df1, df2):
@@ -110,3 +112,47 @@ def processing(input_df, model_type, test_size):
     train_raw, test_raw = train_test_split(raw_data_combined_scaled, test_size = test_size)
 
     return train_raw, test_raw, input_shape, ord_cols_df, coeffs
+
+
+def formatting_for_passing_to_model(rawdata, exp_features, model_id):
+    try:
+        backtesting_data = rawdata[exp_features]
+        return backtesting_data
+    except KeyError:
+        key_present = list(rawdata.columns)
+        keys_missing = []
+
+        for key in exp_features:
+            if key not in key_present:
+                keys_missing.append(key)
+
+        length = len(keys_missing)
+        track = 0
+        shape = rawdata.shape
+
+        for keys in keys_missing:
+            if keys[:2] == "at" or "ht":
+                track += 1
+
+        print(colored("Attempting to deal with missing datapoint(s)....", 'red'))
+
+        entry = np.zeros((shape[0], 1))
+
+        if length == track:
+            print(colored("Fixing input data....", 'red'))
+            for key in keys_missing:
+                rawdata[key] = entry
+            try:
+                backtesting_data = rawdata[exp_features]
+                print(colored("Input data fixed", 'green'))
+                return backtesting_data
+            except KeyError:
+                print(colored("ERROR - Missing datapoint(s): ", 'red'))
+                print(colored("Attempt was made to fix input data, but it wasn't possible", 'red'))
+
+        else:
+            print(colored("ERROR - input data cannot be handled", 'red'))
+            print(
+                colored(model_id + " can't be used to make predicitons wihtout the above, datapoint(s)",
+                        "red"))
+            raise Exception
