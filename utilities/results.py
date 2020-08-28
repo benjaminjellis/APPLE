@@ -4,10 +4,10 @@ Script used to evaluate the predictions made by APPLE and others
 
 import pandas as pd
 import os
-import glob
 from pathlib import Path
 from IPython.display import display
 from termcolor import colored
+from core.loaders import load_json_or_csv
 import pathlib
 
 
@@ -20,129 +20,137 @@ def correct_pred(col1, col2):
 
 class Predictions(object):
 
-    def __init__(self, week = None):
+    def __init__(self, user_predictions, apple_predictions, aggregated_results):
         self.path = str(pathlib.Path().absolute())
-        self.running_results_dir = self.path + "/data/predictions/running/"
-        self.running_results_log_loc = self.running_results_dir + "results_log.csv"
+        self.running_log = aggregated_results
+        self.user_predictions = load_json_or_csv(user_predictions)
+        self.apple_predictions = load_json_or_csv(apple_predictions)
 
-        if week is not None:
-            self.week = week
+        # load in user predictions
+        self.user_predictions["Fixture"] = self.user_predictions ["HomeTeam"] + " v " + self.user_predictions ["AwayTeam"]
 
-            predictions_dir = self.path + "/data/predictions/" + week + "/"
+        week_predictions = self.apple_predictions
 
-            # load in the APPLE predictions
-            for f in glob.glob(predictions_dir + "*_predicted_results.csv"):
-                apple_pred = pd.read_csv(f)
+        # get the user prediction columns
+        user_prediction_cols_raw = self.user_predictions.columns.to_list()
+        user_prediction_cols = []
 
-            # load in user predictions
-            uspred_loc = predictions_dir + week + "up.csv"
-            upred = pd.read_csv(uspred_loc)
-            upred["Fixture"] = upred["HomeTeam"] + " v " + upred["AwayTeam"]
+        for col in user_prediction_cols_raw:
+            if "Prediction" in col:
+                user_prediction_cols.append(col)
 
-            weekly_pred = apple_pred.copy()
+        # aggregate weekly predictions
+        for col in user_prediction_cols:
+            week_predictions[col] = self.user_predictions[col]
 
-            # aggregate weekly predictions
-            weekly_pred["DD Prediction"] = upred["DD Prediction"]
-            weekly_pred["JR Prediction"] = upred["JR Prediction"]
-            weekly_pred["MW Prediction"] = upred["MW Prediction"]
-            weekly_pred["Date"] = upred["Date"]
+        week_predictions["Date"] = self.user_predictions["Date"]
 
-            # format df for display
-            weekly_pred = weekly_pred[
-                ["Fixture", "Date", "APPLE Prediction", "DD Prediction", "JR Prediction", "MW Prediction"]]
+        weekly_pred_output_cols = ["Fixture", "Date", "APPLE Prediction"] + user_prediction_cols
 
-            self.weekly_pred = weekly_pred
+        # format df for display
+        week_predictions = week_predictions[
+            weekly_pred_output_cols]
+        self.user_prediction_cols = user_prediction_cols
+        self.week_predictions = week_predictions
 
     def show(self):
-        display(self.weekly_pred)
+        display(self.week_predictions)
 
 
 class Results(Predictions):
 
-    def weekly(self):
-        # load in actual resutls
-        ftr_loc = self.path + "/data/results/" + self.week + "res.csv"
-        ftr = pd.read_csv(ftr_loc)
+    def aggregate(self, ftrs, winners_log):
+        # load in full time results
+        ftr = load_json_or_csv(ftrs)
+        ftr["Fixture"] = ftr["HomeTeam"] + " v " + ftr["AwayTeam"]
 
-        # add actual results to the weekly prediction table
-        self.weekly_pred["FTR"] = ftr["FTR"]
-        display(self.weekly_pred)
-        no_matches = self.weekly_pred.shape[0]
+        # merge the user predictions and the full time results
+        results_and_predictions_df = self.week_predictions.merge(ftr, how = "outer")
+        # get number of matches were predicted for
+        no_matches = results_and_predictions_df.shape[0]
+        results_and_predictions_df_cols = ["Date", "Time", "Week", "Fixture", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
+        results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]
+        display(results_and_predictions_df)
 
-        # export the results to a running log
+        # export the weekly user predictions and full time results to a running log
         try:
-            log = pd.read_csv(self.running_results_log_loc)
-            log_update = self.weekly_pred
+            log = load_json_or_csv(self.running_log)
+            log_update = results_and_predictions_df
             log = pd.concat([log, log_update], ignore_index=True)
             log.drop_duplicates(subset=None, keep='first', inplace=True)
             log.reset_index(drop=True)
         except FileNotFoundError:
-            if not os.path.exists(self.running_results_dir):
-                os.mkdir(self.running_results_dir)
-            Path(self.running_results_log_loc).touch()
-            log = self.weekly_pred
+            log = results_and_predictions_df
 
-        log.to_csv(self.running_results_log_loc, index=False, index_label=False)
+        # export running log
+        log.to_csv(self.running_log, index=False, index_label=False)
 
-        # aggregate weekly results and sum to get accuracy of each person's predictions
-        self.weekly_pred['APPLE'] = self.weekly_pred.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
-        self.weekly_pred['DD'] = self.weekly_pred.apply(lambda x: correct_pred(x['DD Prediction'], x['FTR']), axis=1)
-        self.weekly_pred['JR'] = self.weekly_pred.apply(lambda x: correct_pred(x['JR Prediction'], x['FTR']), axis=1)
-        self.weekly_pred['MW'] = self.weekly_pred.apply(lambda x: correct_pred(x['MW Prediction'], x['FTR']), axis=1)
+        # find accuracy of each predictor
+        results_and_predictions_df['APPLE'] = results_and_predictions_df.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
+        agg_out_col_name = []
+        for col in self.user_prediction_cols:
+            out_col_name = col.strip(" Prediction")
+            agg_out_col_name.append(out_col_name)
+            results_and_predictions_df[out_col_name] = results_and_predictions_df.apply(lambda x: correct_pred(x[col], x['FTR']), axis=1)
 
-        b = self.weekly_pred.sum()
-        b = b[['APPLE', 'DD', 'JR', "MW"]]
+        # sum cols to get accuracies
+        correct_res_df = results_and_predictions_df.sum()
+        correct_res_df = correct_res_df[["APPLE"] + agg_out_col_name]
+        summed_results_df = pd.DataFrame({' ': correct_res_df.index, 'Correct Predictions': correct_res_df.values})
+        summed_results_df['Accuracy of Predictions (%)'] = (summed_results_df['Correct Predictions'] / no_matches) * 100
+        summed_results_df = summed_results_df.sort_values(by='Accuracy of Predictions (%)', ascending=False).reset_index(drop=True)
 
-        weekly_res = pd.DataFrame({' ': b.index, 'Correct Predictions': b.values})
-        weekly_res['Accuracy of Predictions (%)'] = (weekly_res['Correct Predictions'] / no_matches) * 100
-        weekly_res = weekly_res.sort_values(by='Accuracy of Predictions (%)', ascending=False).reset_index(drop=True)
-
-        print(colored(self.week + " results:", "green"))
-        display(weekly_res)
+        print(colored("Last week's results:", "green"))
+        display(summed_results_df)
 
         # find out who won each week and add that to a log
-        firstw = weekly_res[' '].iloc[0]
-        secondw = weekly_res[' '].iloc[1]
-        thridw = weekly_res[' '].iloc[2]
-        fourthw = weekly_res[' '].iloc[3]
+        firstw = summed_results_df[' '].iloc[0]
+        secondw = summed_results_df[' '].iloc[1]
+        thridw = summed_results_df[' '].iloc[2]
+        fourthw = summed_results_df[' '].iloc[3]
+        fifthw = summed_results_df[' '].iloc[4]
 
+        if firstw == secondw == thridw == fourthw == fifthw:
+            print("Last week it was a five-way tie \n\n\n")
         if firstw == secondw == thridw == fourthw:
-            print("For " + self.week + " it's a four way tie \n\n\n")
+            print("Last week it was a f four-way tie \n\n\n")
         if firstw == secondw == thridw:
             weekly_winner = firstw + ", " + secondw + ", " + thridw
-            print("For " + self.week + " it's a three way tie between: " + weekly_winner + "\n\n\n")
+            print("Last week it was a fthree-way tie between: " + weekly_winner + "\n\n\n")
         if firstw == secondw:
             weekly_winner = firstw + "& " + secondw
-            print("For " + self.week + " it's a tie between: " + weekly_winner + "\n\n\n")
+            print("Last week it was a tie between: " + weekly_winner + "\n\n\n")
         else:
-            print("For " + self.week + " the winner is " + firstw + "\n\n\n")
+            print("Last week the winner was " + firstw + "\n\n\n")
             weekly_winner = firstw
 
-        winner_log_entry = {'Week': [self.week], "Winner": [weekly_winner]}
-        log_output = self.running_results_dir + "/winners_log"
+        winner_log_entry = {'Week': [results_and_predictions_df.loc[0,"Week"]], "Winner": [weekly_winner]}
 
         try:
-            winners_log = pd.read_csv(log_output)
+            winners_log_df = load_json_or_csv(winners_log)
             log_update = pd.DataFrame(data=winner_log_entry)
-            winners_log = pd.concat([winners_log, log_update], ignore_index=True)
+            winners_log_df = pd.concat([winners_log_df, log_update], ignore_index=True)
         except FileNotFoundError:
-            Path(log_output).touch()
-            winners_log = pd.DataFrame(data=winner_log_entry)
+            winners_log_df = pd.DataFrame(data=winner_log_entry)
 
-        winners_log.to_csv(log_output, index=False, index_label=False)
+        winners_log_df.to_csv(winners_log, index=False, index_label=False)
+        
 
         # calc the overall accuracy of all predictions so far
         no_mathes_log = log.shape[0]
-
+        # load in
+        agg_out_col_name = []
         log['APPLE'] = log.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
-        log['DD'] = log.apply(lambda x: correct_pred(x['DD Prediction'], x['FTR']), axis=1)
-        log['JR'] = log.apply(lambda x: correct_pred(x['JR Prediction'], x['FTR']), axis=1)
-        log['MW'] = log.apply(lambda x: correct_pred(x['MW Prediction'], x['FTR']), axis=1)
 
-        c = log.sum()
-        c = c[['APPLE', 'DD', 'JR', "MW"]]
+        for col in self.user_prediction_cols:
+            out_col_name = col.strip(" Prediction")
+            agg_out_col_name.append(out_col_name)
+            log[out_col_name] = log.apply(lambda x: correct_pred(x[col], x['FTR']), axis=1)
 
-        log_res = pd.DataFrame({' ': c.index, 'Total Correct Predictions': c.values})
+        log_summed = log.sum()
+        log_summed = log_summed[["APPLE"] + agg_out_col_name]
+
+        log_res = pd.DataFrame({' ': log_summed.index, 'Total Correct Predictions': log_summed.values})
         log_res['Accuracy of Total Predictions (%)'] = (log_res['Total Correct Predictions'] / no_mathes_log) * 100
         log_res = log_res.sort_values(by='Accuracy of Total Predictions (%)', ascending=False).reset_index(drop=True)
 
@@ -164,22 +172,3 @@ class Results(Predictions):
             print("Overall it's a tie between: " + running_winner)
         else:
             print("Overall the most accurate predictor is " + firstr)
-
-    def running(self):
-        full_res_log = pd.read_csv(self.running_results_log_loc)
-        display(full_res_log)
-        no_matches = full_res_log.shape[0]
-
-        full_res_log['APPLE'] = full_res_log.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis = 1)
-        full_res_log['DD'] = full_res_log.apply(lambda x: correct_pred(x['DD Prediction'], x['FTR']), axis = 1)
-        full_res_log['JR'] = full_res_log.apply(lambda x: correct_pred(x['JR Prediction'], x['FTR']), axis = 1)
-        full_res_log['MW'] = full_res_log.apply(lambda x: correct_pred(x['MW Prediction'], x['FTR']), axis = 1)
-
-        c = full_res_log.sum()
-        c = c[['APPLE', 'DD', 'JR', "MW"]]
-
-        eos_results = pd.DataFrame({' ': c.index, 'Total Correct Predictions': c.values})
-        eos_results['Accuracy of Total Predictions (%)'] = (eos_results['Total Correct Predictions'] / no_matches) * 100
-        eos_results = eos_results.sort_values(by = 'Accuracy of Total Predictions (%)', ascending = False).reset_index(
-            drop = True)
-        display(eos_results)

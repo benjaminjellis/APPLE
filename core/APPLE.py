@@ -42,7 +42,7 @@ class APPLE(object):
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "inner")
 
         # results directory
-        self.results_dir = self.path + "/results/"
+        self.results_dir = self.path + "20_21/results/"
 
         if not os.path.exists(self.results_dir):
             os.mkdir(self.results_dir)
@@ -92,7 +92,6 @@ class APPLE(object):
             predictions_file_output_loc = self.job_result_dir + model + "_predicted_results.csv"
             if user_file_overwrite_check(predictions_file_output_loc):
                 predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
-
 
     def backtest(self, data_to_backtest_on, ftrs = None):
         """
