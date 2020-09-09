@@ -23,7 +23,7 @@ class APPLE(object):
         :param data_for_predictions: str
                 filepath for the data a model will use for predictions
         :param job_name: str
-                name / ID of the job, this will determine the name of the output dir
+                name / ID of the job, this will determine the name of the output directory
         """
         # define path for making dirs and navigating
         self.path = str(Path().absolute())
@@ -42,7 +42,7 @@ class APPLE(object):
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "inner")
 
         # results directory
-        self.results_dir = self.path + "/results/"
+        self.results_dir = self.path + "/results/20_21/"
 
         if not os.path.exists(self.results_dir):
             os.mkdir(self.results_dir)
@@ -53,15 +53,7 @@ class APPLE(object):
 
     def run(self):
         """
-        Used to make predictions on
-        :param cleanup: boolean
-                Whether or not to cleanup the saved_models directory
-        :param upper_limit: int
-                If cleanup is set to True, upper_limit is used to specify the maxium number
-                of saved_models to retain, defaults to 15
-        :param prct_to_remove: int
-                If cleanup is set to True, prct_to_remove is used to specify the number
-                of models to remove as a percentage of upper_limit
+        Used to make predictions on data passed as instance
         :return: Nothing, produces predictions and outputs them to file
         """
 
@@ -93,10 +85,10 @@ class APPLE(object):
             if user_file_overwrite_check(predictions_file_output_loc):
                 predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
 
-
     def backtest(self, data_to_backtest_on, ftrs = None):
         """
-        :param ftrs:
+        :param ftrs: str
+                filepath to full time results file, used to evaluate predictions
         :param data_to_backtest_on: list of str or str
                 filepath of single data file or list of filepaths to data that will be used for backtesting
         :return:
