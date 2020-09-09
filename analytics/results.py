@@ -164,5 +164,5 @@ class Results(Predictions):
 
         # find out who won each week
         overall_leader = winners_from_dataframe(log_res, find_max_of = 'Accuracy of Total Predictions (%)', get_winners_from = " ")
-        # audit list of weekly winners
+        # find out who has the total best prediction results
         print("Overall winner(s): {}".format(overall_leader))
