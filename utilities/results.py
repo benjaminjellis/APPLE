@@ -3,8 +3,6 @@ Script used to evaluate the predictions made by APPLE and others
 """
 
 import pandas as pd
-import os
-from pathlib import Path
 from IPython.display import display
 from termcolor import colored
 from core.loaders import load_json_or_csv
@@ -21,6 +19,14 @@ def correct_pred(col1, col2):
 class Predictions(object):
 
     def __init__(self, user_predictions, apple_predictions, aggregated_results):
+        """
+        :param user_predictions: str
+                filepath for the user predictions input file
+        :param apple_predictions: str
+                filepath for the apple prediction input file
+        :param aggregated_results: str
+                filepath for the aggregated_results output file
+        """
         self.path = str(pathlib.Path().absolute())
         self.running_log = aggregated_results
         self.user_predictions = load_json_or_csv(user_predictions)
@@ -60,6 +66,13 @@ class Predictions(object):
 class Results(Predictions):
 
     def aggregate(self, ftrs, winners_log):
+        """
+        :param ftrs: str
+                filepath for the full time results input file
+        :param winners_log: str
+                filepath for the winner log output file
+        :return: nothing
+        """
         # load in full time results
         ftr = load_json_or_csv(ftrs)
         ftr["Fixture"] = ftr["HomeTeam"] + " v " + ftr["AwayTeam"]

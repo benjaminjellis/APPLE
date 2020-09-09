@@ -1,10 +1,14 @@
+"""
+This script is used to generate predictions using APPLE
+"""
+
 from core.APPLE import APPLE
 
 
 # fixtures APPLE will predict results for
 fixtures_to_predict = "data/user_predictions/20_21/week1/week1userpredictions.csv"
 # data APPLE will use to make predictions
-data_for_predictions = "data/mined_data/20_21/w29f.csv"
+data_for_predictions = "data/mined_data/20_21/week1.csv"
 # data for APPLE to use to backtest saved models
 data_to_backtest_on = ["data/mined_data/19_20/w29f.csv"]
 ftrs = ["data/ftrs/19_20/week29res.csv"]
