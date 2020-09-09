@@ -16,13 +16,11 @@ def correct_pred(col1, col2):
         return 0
 
 
-def winners_from_dataframe(dataframe):
-    winners_str_to_return = ""
-    max_val = dataframe["Result"].max()
-    winners = dataframe[dataframe["Result"] == max_val]["Name"].to_list()
-    for winner in winners:
-        winners_str_to_return += winner + ", "
-    return winners_str_to_return
+def winners_from_dataframe(dataframe, find_max_of, get_winners_from):
+    max_val = dataframe[find_max_of].max()
+    winners = dataframe[dataframe[find_max_of] == max_val][get_winners_from].to_list()
+    winners_str = ','.join(winners)
+    return winners_str
 
 
 class Predictions(object):
@@ -89,7 +87,7 @@ class Results(Predictions):
         ftr["Fixture"] = ftr["HomeTeam"] + " v " + ftr["AwayTeam"]
 
         # merge the user predictions and the full time results
-        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "outer")
+        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner")
 
         # get number of matches were predicted for
         no_matches = results_and_predictions_df.shape[0]
@@ -126,22 +124,21 @@ class Results(Predictions):
         summed_results_df['Accuracy of Predictions (%)'] = (summed_results_df['Correct Predictions'] / no_matches) * 100
         summed_results_df = summed_results_df.sort_values(by='Accuracy of Predictions (%)', ascending=False).reset_index(drop=True)
 
-        print(colored("Last week's results:", "green"))
+        print(colored("\nLast week's results:", "green"))
         display(summed_results_df)
 
-        # find out who won each week and add that to a log
-        weekly_winners = winners_from_dataframe(summed_results_df)
-
+        # find out who won each week
+        weekly_winners = winners_from_dataframe(summed_results_df, find_max_of = "Accuracy of Predictions (%)", get_winners_from = " ")
+        # audit list of weekly winners
+        print("This weeks' winner(s): {}".format(weekly_winners))
+        # add weekly winners to a log
         winner_log_entry = {'Week': [results_and_predictions_df.loc[0,"Week"]], "Winner": [weekly_winners]}
-        print(winner_log_entry)
-
         try:
             winners_log_df = load_json_or_csv(winners_log)
             log_update = pd.DataFrame(data=winner_log_entry)
             winners_log_df = pd.concat([winners_log_df, log_update], ignore_index=True)
         except FileNotFoundError:
             winners_log_df = pd.DataFrame(data=winner_log_entry)
-
         winners_log_df.to_csv(winners_log, index=False, index_label=False)
 
         # calc the overall accuracy of all predictions so far
@@ -162,21 +159,10 @@ class Results(Predictions):
         log_res['Accuracy of Total Predictions (%)'] = (log_res['Total Correct Predictions'] / no_mathes_log) * 100
         log_res = log_res.sort_values(by='Accuracy of Total Predictions (%)', ascending=False).reset_index(drop=True)
 
-        print(colored("results to date:", "green"))
+        print(colored("\nresults to date:", "green"))
         display(log_res)
 
-        firstr = log_res[' '].iloc[0]
-        secondr = log_res[' '].iloc[1]
-        thridr = log_res[' '].iloc[2]
-        fourthr = log_res[' '].iloc[3]
-
-        if firstr == secondr == thridr == fourthr:
-            print("Overall it's a four way tie")
-        if firstr == secondr == thridr:
-            running_winner = firstr + ", " + secondr + ", " + thridr
-            print("Overall it's a three way tie between: " + running_winner)
-        if firstr == secondr:
-            running_winner = firstr + "& " + secondr
-            print("Overall it's a tie between: " + running_winner)
-        else:
-            print("Overall the most accurate predictor is " + firstr)
+        # find out who won each week
+        overall_leader = winners_from_dataframe(log_res, find_max_of = 'Accuracy of Total Predictions (%)', get_winners_from = " ")
+        # find out who has the total best prediction results
+        print("Overall winner(s): {}".format(overall_leader))
