@@ -11,7 +11,7 @@ Phase 1 was a phase of real world testing where APPLE was tested against 3 human
 With the start of the 2020/21 Premier League season will come Phase 2 which will be another phase of real world testing while APPLE is also continuously upgraded. 
 
 ## STRUDEL
-STRUDEL is more user-friendly way to solicit the user predictions that APPLE utilises. It is currently under development [here.] (https://github.com/BrownKnight/STRUDEL)
+STRUDEL is more user-friendly way to solicit the user predictions that APPLE utilises. It is currently under development [here.](https://github.com/BrownKnight/STRUDEL)
 
 ## Credits
 My thanks to everyone at https://www.football-data.co.uk/ for providing the data APPLE is based on
