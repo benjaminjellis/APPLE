@@ -1,8 +1,7 @@
 # APPLE  [![PEP8](https://img.shields.io/badge/code%20style-pep8-orange.svg)](https://www.python.org/dev/peps/pep-0008/)
 
 
-**A**rtificial neural networks for **P**rediction of **P**remier **L**eague gam**E**s, **APPLE** for short, is a project to utilise ANNs to create models that can be used to predict Premier League games. APPLE uses betting odds as it's source data and it currently being extended to incorporate other data sources to improve prediction outcomes.  
-
+**A**rtificial neural networks for **P**rediction of **P**remier **L**eague gam**E**s, **APPLE** for short, is a project to utilise ANNs to create models that can be used to predict Premier League games.
 
 ## Status
 APPLE is currently under post Phase 1 refactoring and development. 
