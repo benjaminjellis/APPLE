@@ -1,11 +1,11 @@
 """
-API to use APPLE
+APPLE API
 """
 
 from core.train import Train
 from core.predict import Predict
 from core.miners import user_file_overwrite_check
-from core.cleanup import Cleanup
+from core.cleanup import cleanup
 from core.backtest import Backtest
 from core.loaders import load_json_or_csv
 import pandas as pd
@@ -18,6 +18,7 @@ class APPLE(object):
 
     def __init__(self, fixtures_to_predict, data_for_predictions, job_name):
         """
+        Constructor loads file into memory, creates file paths, results directories and merges data and fixtures file
         :param fixtures_to_predict: str
                 filepath of the file that contains the fixtures you want to predict
         :param data_for_predictions: str
@@ -25,6 +26,7 @@ class APPLE(object):
         :param job_name: str
                 name / ID of the job, this will determine the name of the output directory
         """
+
         # define path for making dirs and navigating
         self.path = str(Path().absolute())
 
@@ -43,17 +45,23 @@ class APPLE(object):
 
         # results directory
         self.results_dir = self.path + "/results/20_21/"
-
         if not os.path.exists(self.results_dir):
             os.mkdir(self.results_dir)
 
+        # output files directory
         self.job_result_dir = self.results_dir + "/" + job_name + "/"
         if not os.path.exists(self.job_result_dir):
             os.mkdir(self.job_result_dir)
 
+        # private variables
+        self._data_to_backtest_on = None
+        self._ftrs = None
+        self._upper_limit = None
+        self._prct_to_remove = None
+
     def run(self):
         """
-        Used to make predictions on data passed as instance
+        Method to make predictions on passed data
         :return: Nothing, produces predictions and outputs them to file
         """
 
@@ -87,16 +95,34 @@ class APPLE(object):
 
     def backtest(self, data_to_backtest_on, ftrs = None):
         """
+        Method to backtest all models on specified data
         :param ftrs: str
-                filepath to full time results file, used to evaluate predictions
+                Optional - Filepath to full time results file, used to evaluate predictions
         :param data_to_backtest_on: list of str or str
-                filepath of single data file or list of filepaths to data that will be used for backtesting
-        :return:
+                Filepath of single data file or list of filepaths to data that will be used for backtesting. If this
+                file contains the full time results there's no
+        :return: nothing
         """
+        self._data_to_backtest_on = data_to_backtest_on
+        self._ftrs = ftrs
+
         back_tester = Backtest(data_to_backtest_on = data_to_backtest_on, ftrs = ftrs)
         back_tester.all()
         back_tester.commit_log_updates()
 
     def cleanup(self, upper_limit = None, prct_to_remove = None):
-        # cleanup the saved_models dir
-        Cleanup(upper_limit = upper_limit, prct_to_remove = prct_to_remove)
+        """
+        Method to clean up saved models directory
+        :param upper_limit: int
+                Optional - Threshold number of models to retain. Once this value is exceeded this method will start to
+                delete the lowest performing models. Default and minimum value is 15.
+        :param prct_to_remove: int
+                Optional - Percentage of models to remove. Once upper_limit is exceeded by the number of models retained
+                in the saved model directory the lowest performing n% of models are deleted, where n is prct_to_remove.
+                Default value is 50 and maximum value is 80.
+        :return: Nothing
+        """
+
+        self._upper_limit = upper_limit
+        self._prct_to_remove = prct_to_remove
+        cleanup(upper_limit = upper_limit, prct_to_remove = prct_to_remove)
