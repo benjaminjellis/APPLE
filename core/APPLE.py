@@ -61,7 +61,7 @@ class APPLE(object):
 
     def run(self):
         """
-        Used to make predictions on data passed instance
+        Method to make predictions on passed data
         :return: Nothing, produces predictions and outputs them to file
         """
 
