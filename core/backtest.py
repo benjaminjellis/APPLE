@@ -9,8 +9,7 @@ import pandas as pd
 from core.scaler import scale_df_with_params
 from core.loaders import load_json_or_csv, load_or_aggregate
 from core.data_processing import formatting_for_passing_to_model
-from termcolor import colored
-import numpy as np
+
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -29,7 +28,7 @@ def log_update(model_id, results, model_log):
     """
     # get the row number for the model
     row = model_log[model_log['Model ID'] == model_id].index
-    # update test loos
+    # update test log
     model_log.at[row, "Test Loss"] = results[0]
     model_log.at[row, "Test Acc"] = results[1]
 
@@ -62,7 +61,7 @@ class Backtest(object):
         """
         Method to backtest a single model
         :param model_id:  str
-            - uniqe model id to backtest
+                uniqe model id of the model to backtest
         :return: nothing
         """
         print("Backtesting model " + str(model_id))
@@ -82,16 +81,16 @@ class Backtest(object):
         exp_features.append("FTR")
         rawdata = self.raw_backtesting_data
 
-        # code below is replicated from predict.py, turn this into a def and use in both classes
+        # if model is type 2 or 3 use one hot encoding
         if model_type == 2 or model_type == 3:
             ats = pd.get_dummies(rawdata["AwayTeam"], prefix = "at")
             hts = pd.get_dummies(rawdata["HomeTeam"], prefix = "ht")
             rawdata = pd.concat([rawdata, ats], axis = 1, sort = False)
             rawdata = pd.concat([rawdata, hts], axis = 1, sort = False)
-
             rawdata.pop("AwayTeam")
             rawdata.pop("HomeTeam")
 
+        # process data for passing to models
         backtesting_data = formatting_for_passing_to_model(rawdata = rawdata, exp_features = exp_features, model_id = model_id)
 
         # categorical encoding for FTR col
@@ -116,7 +115,7 @@ class Backtest(object):
         """
         Method to backtest one of more models
         :param models: list of str
-                - a list of models to backtest
+                list of models ids to backtest
         :return: nothing
         """
         for model in models:
@@ -124,7 +123,7 @@ class Backtest(object):
 
     def all(self):
         """
-        Method to backtest all models
+        Method to backtest all saved models
         :return: nothing
         """
         # get all the mode ids as a list
