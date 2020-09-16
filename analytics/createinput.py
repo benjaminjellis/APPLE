@@ -8,7 +8,7 @@ import pathlib
 path = str(pathlib.Path().absolute().parent)
 
 # load in user predictions
-fix_cols_data = pd.read_csv(path + "/data/predictions/week36/week36up.csv")
+fix_cols_data = pd.read_csv(path + "data/user_predictions/20_21/week1/week1userpredictions.csv")
 
 # use user predictions to grab fixtures
 Date = fix_cols_data['Date'].tolist()

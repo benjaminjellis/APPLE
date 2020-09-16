@@ -75,9 +75,9 @@ def team_cleaner(team):
     """
     teams_19_20 = ["Arsenal", "Aston Villa", "Bournemouth", "Brighton", "Burnley", "Chelsea", "Crystal Palace",
                    "Everton",
-                   "Leicester", "Liverpool", "Man City", "Man United", "Newcastle", "Norwich", "Sheffield United",
+                   "Leicester", "Liverpool", "Leeds", "Man City", "Man United", "Newcastle", "Norwich", "Sheffield United",
                    "Southampton",
-                   "Tottenham", "Watford", "West Ham", "Wolves"]
+                   "Tottenham", "Watford", "West Ham", "Wolves", "Fulham", "West Brom"]
 
     return process.extractOne(team, teams_19_20)[0]
 
@@ -113,17 +113,17 @@ class MineOdds(object):
     def __str__(self):
         return "MineOdds Miner"
 
-    def __init__(self, week):
+    def __init__(self, fixtures_file):
         print(colored(
             "WARNING: Mine is currently undergoing testing an cannot be relied upon for data mining at present. Please do not use"))
         self.driver = webdriver.Safari()
         self.path = str(Path().absolute())
-        self.week = week
+        self.week = 1
 
         # load fixtures to save odds for
         try:
             fixtures = pd.read_csv(
-                self.path + "/data/predictions/week" + str(self.week) + "/week" + str(self.week) + "up.csv")
+                self.path + "/" + fixtures_file, engine = "python")
             self.fixtures = fixtures[["HomeTeam", "AwayTeam"]]
         except FileNotFoundError:
             raise FileNotFoundError("User predictions file for week {} not found, try using MineFixtures".format(self.week))
@@ -133,7 +133,6 @@ class MineOdds(object):
         self.fixtures["HomeTeam"] = self.fixtures.apply(lambda x: team_cleaner(x["HomeTeam"]), axis = 1)
         self.fixtures["AwayTeam"] = self.fixtures.apply(lambda x: team_cleaner(x["AwayTeam"]), axis = 1)
 
-        self.week = week
         self.WH = None
         self.B365 = None
         self.INTERWTTEN = None
