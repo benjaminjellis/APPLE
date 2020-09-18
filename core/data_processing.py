@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from core.scaler import scale_df
 import numpy as np
 from termcolor import colored
+from fuzzywuzzy import process
 
 
 def preprocessing(df1, df2):
@@ -156,3 +157,23 @@ def formatting_for_passing_to_model(rawdata, exp_features, model_id):
                 colored(model_id + " can't be used to make predicitons wihtout the above, datapoint(s)",
                         "red"))
             raise Exception
+
+
+def team_name_standardisation(team):
+    """
+    Returns a standardised name of the passed team using fuzzy string matching. Train data (also called raw) uses abbreviations or contractions for team
+    name, some models use team name as a feature for prediction. Thus when mining data for weekly predictions the team
+    name needs to be cleaned to match the team name in the train data. The team names in
+
+    :param team: str
+            name of a team
+    :return: str
+            cleaned name consistent with data used to train models.
+    """
+    teams_19_20 = ["Arsenal", "Aston Villa", "Bournemouth", "Brighton", "Burnley", "Chelsea", "Crystal Palace",
+                   "Everton",
+                   "Leicester", "Liverpool", "Leeds", "Man City", "Man United", "Newcastle", "Norwich", "Sheffield United",
+                   "Southampton",
+                   "Tottenham", "Watford", "West Ham", "Wolves", "Fulham", "West Brom"]
+
+    return process.extractOne(team, teams_19_20)[0]

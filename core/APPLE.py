@@ -8,6 +8,7 @@ from core.miners import user_file_overwrite_check
 from core.cleanup import cleanup
 from core.backtest import Backtest
 from core.loaders import load_json_or_csv
+from core.data_processing import team_name_standardisation
 import pandas as pd
 import os
 from termcolor import colored
@@ -34,13 +35,18 @@ class APPLE(object):
         data_for_predictions = self.path + "/" + data_for_predictions
         # load in the fixtures to predict, these are also user predictions
         self.fixtures_to_predict = load_json_or_csv(filepath = fixtures_to_predict)
-
         # load in the data to use to make predictions
         data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
 
         # extract data for predictions from mined data by checking which fixtures
         # to predict
         fixtures_to_predict = self.fixtures_to_predict[["HomeTeam", "AwayTeam", "Week"]]
+        # standardise team names to make sure merge happends correctly
+        fixtures_to_predict["HomeTeam"] = fixtures_to_predict.apply(lambda x: team_name_standardisation(x["HomeTeam"]),
+                                                                    axis = 1)
+        fixtures_to_predict["AwayTeam"] = fixtures_to_predict.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
+                                                                    axis = 1)
+        # merge the fixtures and data
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "inner")
 
         # results directory
