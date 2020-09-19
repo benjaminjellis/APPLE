@@ -10,6 +10,19 @@ from termcolor import colored
 from fuzzywuzzy import process
 
 
+def team_one_hot_encoding(dataframe):
+    # one hot encoding for away team and home team features
+    ats = pd.get_dummies(dataframe["AwayTeam"], prefix = "at")
+    hts = pd.get_dummies(dataframe["HomeTeam"], prefix = "ht")
+    dataframe = pd.concat([dataframe, ats], axis = 1, sort = False)
+    dataframe = pd.concat([dataframe, hts], axis = 1, sort = False)
+
+    dataframe.pop("AwayTeam")
+    dataframe.pop("HomeTeam")
+
+    return dataframe
+
+
 def preprocessing(df1, df2):
     """
     :param df1: dataframe
@@ -30,6 +43,8 @@ def preprocessing(df1, df2):
 
 def processing(input_df, model_type, test_size):
     """
+    :param test_size: float
+            percentage of data to be used as train data
     :param input_df: dataframe
             dataframe to process
     :param model_type: string
@@ -52,42 +67,28 @@ def processing(input_df, model_type, test_size):
     input_df.drop(labels=["FTR"], axis=1, inplace=True)
 
     if model_type == "model 1":
-
-        # remove all columns that aren"t odds or the final result "FTR"
-        raw_data_combined = input_df.drop(["Div", "Date", "FTHG", "FTAG", "HTHG", "HTAG", "HTR", "HS",
-                                           "AS", "HST", "AST", "HF", "AF", "HC", "AC", "HY", "AY",
-                                           "HR", "AR", "HomeTeam", "AwayTeam", "Referee", "PSCA", "PSCD", "PSCH", "VCA",
-                                           "VCD", "VCH"], axis=1)
+        # select just the desired features
+        raw_data_combined = input_df[["B365A", "B365D", "B365H", "BWA", "BWD", "BWH", "PSA",
+                                      "PSD", "PSH", "WHA", "WHD", "WHH"]]
 
         input_shape = raw_data_combined.shape[1]
 
     elif model_type == "model 2":
-        raw_data_combined = input_df.drop(["Div", "Date", "FTHG", "FTAG", "HTHG", "HTAG", "HTR", "HS",
-                                           "AS", "HST", "AST", "HF", "AF", "HC", "AC", "HY", "AY",
-                                           "HR", "AR", "Referee", "PSCA", "PSCD", "PSCH", "VCA", "VCD", "VCH"], axis=1)
+        # select just the desired features
+        raw_data_combined = input_df[["HomeTeam", "AwayTeam", "B365A", "B365D", "B365H",
+                                      "BWA", "BWD", "BWH", "PSA", "PSD", "PSH", "WHA",
+                                      "WHD", "WHH"]]
 
-        # one hot encoding for away team and home team features
-        ats = pd.get_dummies(raw_data_combined["AwayTeam"], prefix="at")
-        hts = pd.get_dummies(raw_data_combined["HomeTeam"], prefix="ht")
-        raw_data_combined = pd.concat([raw_data_combined, ats], axis=1, sort=False)
-        raw_data_combined = pd.concat([raw_data_combined, hts], axis=1, sort=False)
-
-        raw_data_combined.pop("AwayTeam")
-        raw_data_combined.pop("HomeTeam")
+        # one hot encoding for the team names
+        raw_data_combined = team_one_hot_encoding(raw_data_combined)
 
         input_shape = raw_data_combined.shape[1]
 
     elif model_type == "model 3":
         raw_data_combined = input_df[["HomeTeam", "AwayTeam"]]
 
-        # one hot encoding for away team and home team features
-        ats = pd.get_dummies(raw_data_combined["AwayTeam"], prefix="at")
-        hts = pd.get_dummies(raw_data_combined["HomeTeam"], prefix="ht")
-        raw_data_combined = pd.concat([raw_data_combined, ats], axis=1, sort=False)
-        raw_data_combined = pd.concat([raw_data_combined, hts], axis=1, sort=False)
-
-        raw_data_combined.pop("AwayTeam")
-        raw_data_combined.pop("HomeTeam")
+        # one hot encoding for the team names
+        raw_data_combined = team_one_hot_encoding(raw_data_combined)
 
         input_shape = raw_data_combined.shape[1]
 
