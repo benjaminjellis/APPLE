@@ -7,10 +7,10 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from termcolor import colored
+from core.data_processing import team_name_standardisation
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from fuzzywuzzy import process
 import re
 from datetime import datetime
 from datetime import timedelta
@@ -62,26 +62,6 @@ def convert_to_decimal(odds):
     return reformatted_odds
 
 
-def team_cleaner(team):
-    """
-    Returns a clean name of the passed team. Train data (also called raw) uses abbreviations or contractions for team
-    name, some models use team name as a feature for prediction. Thus when mining data for weekly predictions the team
-    name needs to be cleaned to match the team name in the train data.
-
-    :param team: str
-            name of a team
-    :return: str
-            cleaned name consistent with data used to train models.
-    """
-    teams_19_20 = ["Arsenal", "Aston Villa", "Bournemouth", "Brighton", "Burnley", "Chelsea", "Crystal Palace",
-                   "Everton",
-                   "Leicester", "Liverpool", "Leeds", "Man City", "Man United", "Newcastle", "Norwich", "Sheffield United",
-                   "Southampton",
-                   "Tottenham", "Watford", "West Ham", "Wolves", "Fulham", "West Brom"]
-
-    return process.extractOne(team, teams_19_20)[0]
-
-
 def odds_missing_warnings(df):
     """
     def to audit warning if any data requested isn't mined
@@ -113,12 +93,19 @@ class MineOdds(object):
     def __str__(self):
         return "MineOdds Miner"
 
-    def __init__(self, fixtures_file):
+    def __init__(self, fixtures_file, mined_data_output):
+        """
+        :param fixtures_file: str
+                filepath of the fixtures to mine odds for
+        :param mined_data_output: str
+                filepath of the location to output mined data to
+        """
+        self.mined_data_output = mined_data_output
+
         print(colored(
             "WARNING: Mine is currently undergoing testing an cannot be relied upon for data mining at present. Please do not use"))
         self.driver = webdriver.Safari()
         self.path = str(Path().absolute())
-        self.week = 1
 
         # load fixtures to save odds for
         try:
@@ -130,8 +117,8 @@ class MineOdds(object):
 
         # we need to check that each of the HomeTeam and AwayTeam entries match the schema from raw data
         # use the team_cleaner def and a lambda function to do this
-        self.fixtures["HomeTeam"] = self.fixtures.apply(lambda x: team_cleaner(x["HomeTeam"]), axis = 1)
-        self.fixtures["AwayTeam"] = self.fixtures.apply(lambda x: team_cleaner(x["AwayTeam"]), axis = 1)
+        self.fixtures["HomeTeam"] = self.fixtures.apply(lambda x: team_name_standardisation(x["HomeTeam"]), axis = 1)
+        self.fixtures["AwayTeam"] = self.fixtures.apply(lambda x: team_name_standardisation(x["AwayTeam"]), axis = 1)
 
         self.WH = None
         self.B365 = None
@@ -276,7 +263,7 @@ class MineOdds(object):
         # audit warnings about odds missing from mining
         odds_missing_warnings(df = output)
 
-        output.to_json(self.path + "/data/mined_data/w" + str(self.week) + "f.json")
+        output.to_json(self.path + "/" + self.mined_data_output)
 
 
 class MineFixtures(object):
