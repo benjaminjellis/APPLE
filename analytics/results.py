@@ -7,6 +7,7 @@ from IPython.display import display
 from termcolor import colored
 from core.loaders import load_json_or_csv
 import pathlib
+from core.data_processing import team_name_standardisation
 
 
 def correct_pred(col1, col2):
@@ -25,24 +26,24 @@ def winners_from_dataframe(dataframe, find_max_of, get_winners_from):
 
 class Predictions(object):
 
-    def __init__(self, user_predictions, apple_predictions, aggregated_results_file):
+    def __init__(self, user_predictions, apple_predictions):
         """
         :param user_predictions: str
                 filepath for the user predictions input file
         :param apple_predictions: str
                 filepath for the apple prediction input file
-        :param aggregated_results_file: str
-                filepath for the aggregated_results output file
         """
         self.path = str(pathlib.Path().absolute())
-        self.running_log = aggregated_results_file
         self.user_predictions = load_json_or_csv(user_predictions)
         self.apple_predictions = load_json_or_csv(apple_predictions)
 
-        # load in user predictions
-        self.user_predictions["Fixture"] = self.user_predictions ["HomeTeam"] + " v " + self.user_predictions ["AwayTeam"]
-
+        # standardise team names in user predictions
+        self.user_predictions["HomeTeam"] = self.user_predictions.apply(lambda x: team_name_standardisation(x["HomeTeam"]),
+                                                                    axis = 1)
+        self.user_predictions["AwayTeam"] = self.user_predictions.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
+                                                                    axis = 1)
         this_week_predictions = self.apple_predictions
+
 
         # get the user prediction columns
         user_prediction_cols_raw = self.user_predictions.columns.to_list()
@@ -59,7 +60,7 @@ class Predictions(object):
         # get dates
         this_week_predictions["Date"] = self.user_predictions["Date"]
 
-        weekly_pred_output_cols = ["Fixture", "Date", "APPLE Prediction"] + user_prediction_cols
+        weekly_pred_output_cols = ["HomeTeam", "AwayTeam", "Date", "APPLE Prediction"] + user_prediction_cols
 
         # format df for display
         this_week_predictions = this_week_predictions[
@@ -73,8 +74,9 @@ class Predictions(object):
 
 class Results(Predictions):
 
-    def aggregate(self, ftrs, winners_log):
+    def aggregate(self,aggregated_results_file, ftrs, winners_log):
         """
+        :param aggregated_results_file:
         :param ftrs: str
                 filepath for the full time results input file
         :param winners_log: str
@@ -82,22 +84,32 @@ class Results(Predictions):
         :return: nothing
         """
 
+        # load in aggregated resutls file as the running log
+        running_log = aggregated_results_file
+
         # load in full time results
         ftr = load_json_or_csv(ftrs)
-        ftr["Fixture"] = ftr["HomeTeam"] + " v " + ftr["AwayTeam"]
+
+        # standardise team names in ftrs
+        ftr["HomeTeam"] = ftr.apply(
+            lambda x: team_name_standardisation(x["HomeTeam"]),
+            axis = 1)
+        ftr["AwayTeam"] = ftr.apply(
+            lambda x: team_name_standardisation(x["AwayTeam"]),
+            axis = 1)
 
         # merge the user predictions and the full time results
         results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner")
 
         # get number of matches were predicted for
         no_matches = results_and_predictions_df.shape[0]
-        results_and_predictions_df_cols = ["Date", "Time", "Week", "Fixture", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
+        results_and_predictions_df_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
         results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]
         display(results_and_predictions_df)
 
         # export the weekly user predictions and full time results to a running log
         try:
-            log = load_json_or_csv(self.running_log)
+            log = load_json_or_csv(running_log)
             log_update = results_and_predictions_df
             log = pd.concat([log, log_update], ignore_index=True)
             log.drop_duplicates(subset=None, keep='first', inplace=True)
@@ -106,7 +118,7 @@ class Results(Predictions):
             log = results_and_predictions_df
 
         # export running log to file
-        log.to_csv(self.running_log, index=False, index_label=False)
+        log.to_csv(running_log, index=False, index_label=False)
 
         # find accuracy of each predictor
         results_and_predictions_df['APPLE'] = results_and_predictions_df.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
