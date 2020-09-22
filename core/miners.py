@@ -126,9 +126,6 @@ class MineOdds(object):
         self.BWIN = None
         self.PINACLE = None
 
-    def interwetten(self):
-        pass
-
     def pinacle(self):
         url = "https://www.pinnacle.com/en/soccer/england-premier-league/matchups"
         self.driver.get(url)
@@ -146,7 +143,7 @@ class MineOdds(object):
             if ph_test:
                 pass
             else:
-                teams.append(team_cleaner(team))
+                teams.append(team_name_standardisation(team))
 
         # grab the tags which the odds are in
         odds = self.driver.find_elements_by_css_selector("span.price")
@@ -172,6 +169,8 @@ class MineOdds(object):
 
     def bet365(self):
         pass
+        url = "https://www.bet365.com/#/AC/B1/C1/D13/E51761579/F2/"
+        self.driver.get(url)
 
     def bwin(self):
         url = "https://sports.bwin.com/en/sports/football-4/betting/england-14/premier-league-46"
@@ -185,7 +184,7 @@ class MineOdds(object):
         teams_tags = self.driver.find_elements_by_css_selector("div.participant")
         teams = []
         for t in teams_tags:
-            teams.append(team_cleaner(t.text))
+            teams.append(team_name_standardisation(t.text))
 
         # grab odds and clean names
         odds = self.driver.find_elements_by_css_selector("div.option.option-indicator")
@@ -217,8 +216,8 @@ class MineOdds(object):
         teams = []
         for f in fixtures_tags:
             home, away = f.text.split(" v ")
-            home = team_cleaner(team = home)
-            away = team_cleaner(team = away)
+            home = team_name_standardisation(team = home)
+            away = team_name_standardisation(team = away)
             teams.append(home)
             teams.append(away)
 
