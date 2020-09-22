@@ -44,7 +44,6 @@ class Predictions(object):
                                                                     axis = 1)
         this_week_predictions = self.apple_predictions
 
-
         # get the user prediction columns
         user_prediction_cols_raw = self.user_predictions.columns.to_list()
         user_prediction_cols = []
@@ -132,7 +131,7 @@ class Results(Predictions):
         # sum cols to get accuracies
         correct_res_df = results_and_predictions_df.sum()
         correct_res_df = correct_res_df[["APPLE"] + agg_out_col_name]
-        summed_results_df = pd.DataFrame({' ': correct_res_df.index, 'Correct Predictions': correct_res_df.values})
+        summed_results_df = pd.DataFrame({'Predictor': correct_res_df.index, 'Correct Predictions': correct_res_df.values})
         summed_results_df['Accuracy of Predictions (%)'] = (summed_results_df['Correct Predictions'] / no_matches) * 100
         summed_results_df = summed_results_df.sort_values(by='Accuracy of Predictions (%)', ascending=False).reset_index(drop=True)
 
@@ -140,7 +139,7 @@ class Results(Predictions):
         display(summed_results_df)
 
         # find out who won each week
-        weekly_winners = winners_from_dataframe(summed_results_df, find_max_of = "Accuracy of Predictions (%)", get_winners_from = " ")
+        weekly_winners = winners_from_dataframe(summed_results_df, find_max_of = "Accuracy of Predictions (%)", get_winners_from = "Predictor")
         # audit list of weekly winners
         print("This weeks' winner(s): {}".format(weekly_winners))
         # add weekly winners to a log
@@ -167,7 +166,7 @@ class Results(Predictions):
         log_summed = log.sum()
         log_summed = log_summed[["APPLE"] + agg_out_col_name]
 
-        log_res = pd.DataFrame({' ': log_summed.index, 'Total Correct Predictions': log_summed.values})
+        log_res = pd.DataFrame({'Predictor': log_summed.index, 'Total Correct Predictions': log_summed.values})
         log_res['Accuracy of Total Predictions (%)'] = (log_res['Total Correct Predictions'] / no_mathes_log) * 100
         log_res = log_res.sort_values(by='Accuracy of Total Predictions (%)', ascending=False).reset_index(drop=True)
 
