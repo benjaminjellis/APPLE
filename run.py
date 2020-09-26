@@ -6,9 +6,9 @@ from core.APPLE import APPLE
 
 
 # fixtures APPLE will predict results for
-fixtures_to_predict = "data/user_predictions/20_21/week2/week2userpredictions.csv"
+fixtures_to_predict = "data/user_predictions/20_21/week3/week3userpredictions.csv"
 # data APPLE will use to make predictions
-data_for_predictions = "data/mined_data/20_21/week2data.json"
+data_for_predictions = "data/mined_data/20_21/week3data.json"
 
 # data for APPLE to use to backtest saved models
 # data_to_backtest_on = "data/mined_data/19_20/w29f.csv"
@@ -17,7 +17,7 @@ data_for_predictions = "data/mined_data/20_21/week2data.json"
 # create an instance of APPLE called "weekly_run"
 weekly_run = APPLE(fixtures_to_predict = fixtures_to_predict,
                    data_for_predictions = data_for_predictions,
-                   job_name = "week2")
+                   job_name = "week3")
 
 # use weekly run to backtest the saved models
 # weekly_run.backtest(data_to_backtest_on = data_to_backtest_on, ftrs = ftrs)

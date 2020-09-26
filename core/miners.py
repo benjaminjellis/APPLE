@@ -110,7 +110,7 @@ class MineOdds(object):
         # load fixtures to save odds for
         try:
             fixtures = pd.read_csv(
-                self.path + "/" + fixtures_file, engine = "python")
+                self.path + "/" + fixtures_file)
             self.fixtures = fixtures[["HomeTeam", "AwayTeam"]]
         except FileNotFoundError:
             raise FileNotFoundError("User predictions file for week {} not found, try using MineFixtures".format(self.week))
@@ -249,15 +249,15 @@ class MineOdds(object):
         """
         self.williamhill()
         self.pinacle()
-        self.bwin()
-        self.interwetten()
-        self.bet365()
+        #self.bwin()
+        #self.interwetten()
+        #self.bet365()
         self.driver.close()
 
         # mergeing / joining DFs
         intermediate_1 = self.fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
-        intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
-        output = intermediate_2.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
+        #intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
+        output = intermediate_1.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
 
         # audit warnings about odds missing from mining
         odds_missing_warnings(df = output)
