@@ -1,5 +1,5 @@
 """
-Script used to evaluate the predictions made by APPLE and others
+Script used to evaluate the predictions made by APPLE and human predictors
 """
 
 import pandas as pd
@@ -10,11 +10,65 @@ import pathlib
 from core.data_processing import team_name_standardisation
 
 
-def correct_pred(col1, col2):
-    if col1 == col2:
-        return 1
+def calculate_accuracy(df, user_prediction_cols, week = None):
+
+    def correct_pred(col1, col2):
+        if col1 == col2:
+            return 1
+        else:
+            return 0
+
+    # find the number of matches that were predicted that week
+    no_matches = df.shape[0]
+    # get the name of the predictors
+    predictors = []
+    for col in user_prediction_cols:
+        predictors.append(col.strip(" Prediction"))
+        df[col.strip(" Prediction")] = df.apply(
+            lambda x: correct_pred(x[col], x['FTR']), axis = 1)
+    summed_filtered_df = df.sum()
+    summed_filtered_df = summed_filtered_df[predictors]
+    summed_results_df = pd.DataFrame(
+        {'Predictor': summed_filtered_df.index, 'Correct Predictions': summed_filtered_df.values})
+    if week:
+        summed_results_df["Week"] = week
+    summed_results_df['Accuracy of Predictions (%)'] = (summed_results_df['Correct Predictions'] / no_matches) * 100
+    return summed_results_df
+
+
+def calculate_accuracy_transform(df, mode):
+    # get the columns of the dataframe
+    input_df_columns = df.columns.to_list()
+    # get just the prediction columns
+    user_prediction_cols = []
+    for column in input_df_columns:
+        if "Prediction" in column:
+            user_prediction_cols.append(column)
+
+    if mode == "weekly":
+        # define the empty transformed (and output) df
+        accuracy_transform_df = pd.DataFrame(
+            columns = ['Predictor', 'Correct Predictions', 'Week', 'Accuracy of Predictions (%)'])
+
+        weeks_present = set(df["Week"].to_list())
+
+        #  filter for each week
+        for week in weeks_present:
+            # filter to only show one week
+            filtered_df = df[df["Week"] == week].reset_index()
+            summed_results_df = calculate_accuracy(filtered_df, user_prediction_cols, week = week)
+            accuracy_transform_df = pd.concat([accuracy_transform_df, summed_results_df], ignore_index = True)
+
+    elif mode == "overall":
+        accuracy_transform_df = pd.DataFrame(
+            columns = ['Predictor', 'Correct Predictions', 'Accuracy of Predictions (%)'])
+        summed_results_df = calculate_accuracy(df, user_prediction_cols)
+        accuracy_transform_df = pd.concat([accuracy_transform_df, summed_results_df], ignore_index = True)
+
     else:
-        return 0
+        raise Exception
+
+    return accuracy_transform_df
 
 
 def winners_from_dataframe(dataframe, find_max_of, get_winners_from):
@@ -43,7 +97,6 @@ class Predictions(object):
         self.user_predictions["AwayTeam"] = self.user_predictions.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
                                                                     axis = 1)
         this_week_predictions = self.apple_predictions
-
 
         # get the user prediction columns
         user_prediction_cols_raw = self.user_predictions.columns.to_list()
@@ -74,7 +127,7 @@ class Predictions(object):
 
 class Results(Predictions):
 
-    def aggregate(self,aggregated_results_file, ftrs, winners_log):
+    def aggregate(self, aggregated_results_file, ftrs, winners_log):
         """
         :param aggregated_results_file:
         :param ftrs: str
@@ -84,7 +137,7 @@ class Results(Predictions):
         :return: nothing
         """
 
-        # load in aggregated resutls file as the running log
+        # load in aggregated results file as the running log
         running_log = aggregated_results_file
 
         # load in full time results
@@ -102,7 +155,6 @@ class Results(Predictions):
         results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner")
 
         # get number of matches were predicted for
-        no_matches = results_and_predictions_df.shape[0]
         results_and_predictions_df_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
         results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]
         display(results_and_predictions_df)
@@ -120,31 +172,20 @@ class Results(Predictions):
         # export running log to file
         log.to_csv(running_log, index=False, index_label=False)
 
-        # find accuracy of each predictor
-        results_and_predictions_df['APPLE'] = results_and_predictions_df.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
-        agg_out_col_name = []
-
-        for col in self.user_prediction_cols:
-            out_col_name = col.strip(" Prediction")
-            agg_out_col_name.append(out_col_name)
-            results_and_predictions_df[out_col_name] = results_and_predictions_df.apply(lambda x: correct_pred(x[col], x['FTR']), axis=1)
-
-        # sum cols to get accuracies
-        correct_res_df = results_and_predictions_df.sum()
-        correct_res_df = correct_res_df[["APPLE"] + agg_out_col_name]
-        summed_results_df = pd.DataFrame({' ': correct_res_df.index, 'Correct Predictions': correct_res_df.values})
-        summed_results_df['Accuracy of Predictions (%)'] = (summed_results_df['Correct Predictions'] / no_matches) * 100
-        summed_results_df = summed_results_df.sort_values(by='Accuracy of Predictions (%)', ascending=False).reset_index(drop=True)
+        summed_results_df = calculate_accuracy_transform(results_and_predictions_df, mode = "weekly")
 
         print(colored("\nLast week's results:", "green"))
+        # sort by the accuracy for predictions for display
+        summed_results_df = summed_results_df.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
         display(summed_results_df)
 
         # find out who won each week
-        weekly_winners = winners_from_dataframe(summed_results_df, find_max_of = "Accuracy of Predictions (%)", get_winners_from = " ")
+        weekly_winners = winners_from_dataframe(summed_results_df, find_max_of = "Accuracy of Predictions (%)", get_winners_from = "Predictor")
         # audit list of weekly winners
         print("This weeks' winner(s): {}".format(weekly_winners))
         # add weekly winners to a log
         winner_log_entry = {'Week': [results_and_predictions_df.loc[0,"Week"]], "Winner": [weekly_winners]}
+
         try:
             winners_log_df = load_json_or_csv(winners_log)
             log_update = pd.DataFrame(data=winner_log_entry)
@@ -154,27 +195,13 @@ class Results(Predictions):
         winners_log_df.to_csv(winners_log, index=False, index_label=False)
 
         # calc the overall accuracy of all predictions so far
-        no_mathes_log = log.shape[0]
-        # load in
-        agg_out_col_name = []
-        log['APPLE'] = log.apply(lambda x: correct_pred(x['APPLE Prediction'], x['FTR']), axis=1)
-
-        for col in self.user_prediction_cols:
-            out_col_name = col.strip(" Prediction")
-            agg_out_col_name.append(out_col_name)
-            log[out_col_name] = log.apply(lambda x: correct_pred(x[col], x['FTR']), axis=1)
-
-        log_summed = log.sum()
-        log_summed = log_summed[["APPLE"] + agg_out_col_name]
-
-        log_res = pd.DataFrame({' ': log_summed.index, 'Total Correct Predictions': log_summed.values})
-        log_res['Accuracy of Total Predictions (%)'] = (log_res['Total Correct Predictions'] / no_mathes_log) * 100
-        log_res = log_res.sort_values(by='Accuracy of Total Predictions (%)', ascending=False).reset_index(drop=True)
-
+        log_res = calculate_accuracy_transform(log, mode = "overall")
         print(colored("\nresults to date:", "green"))
+        # sort by the accuracy for predictions for display
+        log_res = log_res.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
         display(log_res)
 
         # find out who won each week
-        overall_leader = winners_from_dataframe(log_res, find_max_of = 'Accuracy of Total Predictions (%)', get_winners_from = " ")
+        overall_leader = winners_from_dataframe(log_res, find_max_of = 'Accuracy of Predictions (%)', get_winners_from = "Predictor")
         # find out who has the total best prediction results
         print("Overall winner(s): {}".format(overall_leader))
