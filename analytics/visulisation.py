@@ -29,6 +29,8 @@ class Visualisation(object):
                                box = True,
                                hover_data = self.weekly_summed.columns,
                                template = "simple_white")
+        # set range of axes
+        fig_violin.update_yaxes(range = [0, 100])
         fig_violin.show()
         if output_filepath:
             fig_violin.write_html(self.path + "/analytics/test.html")

@@ -11,6 +11,7 @@ from core.data_processing import team_name_standardisation
 
 pd.options.mode.chained_assignment = None
 
+
 def calculate_accuracy(df, user_prediction_cols, week = None):
 
     def correct_pred(col1, col2):
