@@ -7,7 +7,7 @@ import tensorflow as tf
 from pathlib import Path
 import pandas as pd
 from core.scaler import scale_df_with_params
-from core.loaders import load_json_or_csv, load_or_aggregate
+from core.loaders import load_json_or_csv, load_and_aggregate
 from core.data_processing import formatting_for_passing_to_model
 
 
@@ -47,11 +47,11 @@ class Backtest(object):
         self.model_log = load_json_or_csv(self.model_log_loc)
 
         # load and aggregate all backtesting data to be used
-        mined_data_aggregated = load_or_aggregate(data_to_backtest_on)
+        mined_data_aggregated = load_and_aggregate(data_to_backtest_on)
 
         if ftrs is not None:
             # load and aggreate all ftrs
-            ftrs_aggregated = load_or_aggregate(ftrs)
+            ftrs_aggregated = load_and_aggregate(ftrs)
             self.raw_backtesting_data = pd.merge(mined_data_aggregated, ftrs_aggregated, on = ["HomeTeam", "AwayTeam"])
         else:
             self.raw_backtesting_data = mined_data_aggregated
