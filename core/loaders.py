@@ -16,7 +16,7 @@ def load_json_or_csv(filepath):
         raise ValueError("Mined data file type not recognised: " + str(filepath))
 
 
-def load_or_aggregate(backtesting_data):
+def load_and_aggregate(backtesting_data):
 
     """
     Used to load all data files from specified dir and aggregate them into one dataframe

@@ -9,6 +9,7 @@ from core.loaders import load_json_or_csv
 import pathlib
 from core.data_processing import team_name_standardisation
 
+pd.options.mode.chained_assignment = None
 
 def calculate_accuracy(df, user_prediction_cols, week = None):
 
