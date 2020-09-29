@@ -46,14 +46,27 @@ class Visualisation(object):
             fig_ts.write_html(self.path + "/analytics/test.html")
 
     def stratified_performance(self, metric, output_filepath = None):
-        if metric == "top 6 teams":
+        """
+        used to stratify results by team groupings. e.g. metric "top 6 teams" will filter and calculate the predictions
+        accuracy for each predictor for only the fixtures in which at least one top 6 team is playing.
+        :param metric: str
+                one of "top 6 teams", "top 6 match up" or "newly promoted teams"
+        :param output_filepath: str
+                optional: a filepath to save the html output of the visualisation to
+        :return: nothing
+        """
+        if metric == "top 6 teams" or "top 6 match up":
             sp_filter = ["Arsenal", "Liverpool", "Chelsea", "Man City", "Man United", "Tottenham"]
         elif metric == "newly promoted teams":
             sp_filter = ["Leeds", 'Fulham', "West Brom"]
         else:
             raise AttributeError("Metric not recognised. Please try 'top 6 teams' or 'newly promoted teams")
         # filter the df
-        f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) | (
+        if metric != "top 6 match up":
+            f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) | (
+            self.aggregated_results["HomeTeam"].isin(sp_filter))]
+        else:
+            f_df =  self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) & (
             self.aggregated_results["HomeTeam"].isin(sp_filter))]
         # calculate the accuracy transform
         f_df_accuracy_transform = calculate_accuracy_transform(f_df, mode = "overall")
