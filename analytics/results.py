@@ -178,7 +178,7 @@ class Results(Predictions):
 
         print(colored("\nLast week's results:", "green"))
         # sort by the accuracy for predictions for display
-        summed_results_df = summed_results_df.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
+        summed_results_df = summed_results_df.sort_values(by = "Accuracy of Predictions (%)", ascending = False).reset_index(drop = True)
         display(summed_results_df)
 
         # find out who won each week
@@ -200,7 +200,7 @@ class Results(Predictions):
         log_res = calculate_accuracy_transform(log, mode = "overall")
         print(colored("\nresults to date:", "green"))
         # sort by the accuracy for predictions for display
-        log_res = log_res.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
+        log_res = log_res.sort_values(by = "Accuracy of Predictions (%)", ascending = False).rese_index(drop = True)
         display(log_res)
 
         # find out who won each week
