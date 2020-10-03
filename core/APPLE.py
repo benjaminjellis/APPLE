@@ -8,7 +8,7 @@ from core.miners import user_file_overwrite_check
 from core.cleanup import cleanup
 from core.backtest import Backtest
 from core.loaders import load_json_or_csv
-from core.data_processing import team_name_standardisation
+from core.data_processing import team_name_standardisation, clean_mined_data
 import pandas as pd
 import os
 from termcolor import colored
@@ -37,6 +37,9 @@ class APPLE(object):
         self.fixtures_to_predict = load_json_or_csv(filepath = fixtures_to_predict)
         # load in the data to use to make predictions
         data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
+
+        # clean data_for_predictions_to_merge
+        data_for_predictions_to_merge = clean_mined_data(data_for_predictions_to_merge)
 
         # extract data for predictions from mined data by checking which fixtures
         # to predict
