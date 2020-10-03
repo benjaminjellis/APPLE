@@ -94,10 +94,10 @@ class Predictions(object):
         self.apple_predictions = load_json_or_csv(apple_predictions)
 
         # standardise team names in user predictions
-        self.user_predictions["HomeTeam"] = self.user_predictions.apply(lambda x: team_name_standardisation(x["HomeTeam"]),
-                                                                    axis = 1)
-        self.user_predictions["AwayTeam"] = self.user_predictions.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
-                                                                    axis = 1)
+        self.user_predictions["HomeTeam"] = self.user_predictions.apply(
+                lambda x: team_name_standardisation(x["HomeTeam"]), axis = 1)
+        self.user_predictions["AwayTeam"] = self.user_predictions.apply(
+                lambda x: team_name_standardisation(x["AwayTeam"]), axis = 1)
         this_week_predictions = self.apple_predictions
 
         # get the user prediction columns
@@ -109,8 +109,8 @@ class Predictions(object):
                 user_prediction_cols.append(col)
 
         # aggregate weekly predictions
-        for col in user_prediction_cols:
-            this_week_predictions[col] = self.user_predictions[col]
+        this_week_predictions = this_week_predictions.merge(self.user_predictions, how = "inner",
+                                                            on = ["HomeTeam", "AwayTeam"])
 
         # get dates
         this_week_predictions["Date"] = self.user_predictions["Date"]
