@@ -2,6 +2,7 @@ from pathlib import Path
 import plotly.express as px
 from analytics.results import calculate_accuracy_transform
 from core.loaders import load_json_or_csv
+from IPython.display import display
 
 
 class Visualisation(object):
@@ -13,6 +14,23 @@ class Visualisation(object):
         self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_results_filepath)
         # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
+
+
+    def predictor_team_history(self, predictor, team):
+        """
+        Shoes a user's predictions involving a given team in tabular format
+        :param predictor: str
+                    initials of predictor to show predictions for
+        :param team: str
+                    which team to show the predictor's prdictions for
+        :return: nothing
+        """
+        f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"] == team) | (
+            self.aggregated_results["HomeTeam"] == team)]
+        cols_to_display = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", predictor + " Prediction"]
+        df_to_display = f_df[cols_to_display]
+        display(df_to_display)
+
 
     def volatility(self, output_filepath = None):
         """
@@ -46,6 +64,12 @@ class Visualisation(object):
             fig_ts.write_html(self.path + "/analytics/test.html")
 
     def stratified_performance(self, metric, output_filepath = None):
+        """
+
+        :param metric:
+        :param output_filepath:
+        :return:
+        """
         if metric == "top 6 teams":
             sp_filter = ["Arsenal", "Liverpool", "Chelsea", "Man City", "Man United", "Tottenham"]
         elif metric == "newly promoted teams":

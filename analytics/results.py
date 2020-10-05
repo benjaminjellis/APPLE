@@ -200,7 +200,7 @@ class Results(Predictions):
         log_res = calculate_accuracy_transform(log, mode = "overall")
         print(colored("\nresults to date:", "green"))
         # sort by the accuracy for predictions for display
-        log_res = log_res.sort_values(by = "Accuracy of Predictions (%)", ascending = False).rese_index(drop = True)
+        log_res = log_res.sort_values(by = "Accuracy of Predictions (%)", ascending = False).reset_index(drop = True)
         display(log_res)
 
         # find out who won each week
