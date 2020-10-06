@@ -2,6 +2,7 @@ from pathlib import Path
 import plotly.express as px
 from analytics.results import calculate_accuracy_transform
 from core.loaders import load_json_or_csv
+from IPython.display import display
 
 
 class Visualisation(object):
@@ -14,12 +15,28 @@ class Visualisation(object):
         # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
 
+
+    def predictor_team_history(self, predictor, team):
+        """
+        Shoes a user's predictions involving a given team in tabular format
+        :param predictor: str
+                    initials of predictor to show predictions for
+        :param team: str
+                    which team to show the predictor's prdictions for
+        :return: nothing
+        """
+        f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"] == team) | (
+            self.aggregated_results["HomeTeam"] == team)]
+        cols_to_display = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", predictor + " Prediction"]
+        df_to_display = f_df[cols_to_display]
+        display(df_to_display)
+
+
     def volatility(self, output_filepath = None):
         """
         This VIOLIN plot uses the calculate_accuracy_transform def to
         transform the aggregated weekly results into a box plot that
         helps visualise the spread (or volatility) of predictions made
-
         :param output_filepath:
         :return: nothing
         """
@@ -47,26 +64,18 @@ class Visualisation(object):
 
     def stratified_performance(self, metric, output_filepath = None):
         """
-        used to stratify results by team groupings. e.g. metric "top 6 teams" will filter and calculate the predictions
-        accuracy for each predictor for only the fixtures in which at least one top 6 team is playing.
-        :param metric: str
-                one of "top 6 teams", "top 6 match up" or "newly promoted teams"
-        :param output_filepath: str
-                optional: a filepath to save the html output of the visualisation to
-        :return: nothing
+        :param metric:
+        :param output_filepath:
+        :return:
         """
-        if metric == "top 6 teams" or "top 6 match up":
+        if metric == "top 6 teams":
             sp_filter = ["Arsenal", "Liverpool", "Chelsea", "Man City", "Man United", "Tottenham"]
         elif metric == "newly promoted teams":
             sp_filter = ["Leeds", 'Fulham', "West Brom"]
         else:
             raise AttributeError("Metric not recognised. Please try 'top 6 teams' or 'newly promoted teams")
         # filter the df
-        if metric != "top 6 match up":
-            f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) | (
-            self.aggregated_results["HomeTeam"].isin(sp_filter))]
-        else:
-            f_df =  self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) & (
+        f_df = self.aggregated_results[(self.aggregated_results["AwayTeam"].isin(sp_filter)) | (
             self.aggregated_results["HomeTeam"].isin(sp_filter))]
         # calculate the accuracy transform
         f_df_accuracy_transform = calculate_accuracy_transform(f_df, mode = "overall")

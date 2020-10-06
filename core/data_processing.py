@@ -10,7 +10,51 @@ from termcolor import colored
 from fuzzywuzzy import process
 
 
+def convert_oods(x):
+    """
+    def used to convert British Style odds to European style
+    :param x: str
+            odd to convert
+    :return: converted odd
+    """
+    x = str(x)
+    n, d = x.split("/")
+    n = int(n)
+    d = int(d)
+    div = n / d
+    return div + 1
+
+
+def clean_mined_data(dataframe):
+    """
+    Def to clean a dataframe so that all odds are european style
+    :param dataframe: dataframe to convert
+    :return: cleaned dataframe
+    """
+
+    # get columns
+    cols = dataframe.columns.values.tolist()
+    odds_cols = []
+    # check the columns and refine only for the odds columns
+    for col in cols:
+        if col[-1] == "A" or "H" or "D":
+            odds_cols.append(col)
+    # go through the odd cols
+    for odd_col in odds_cols:
+        # check if the first value in the col has a slash in it
+        check_cell = str(dataframe.iloc[0][odd_col])
+        # if odds in the odd_col are british format convert the entire column to euro format
+        if "/" in check_cell:
+            dataframe[odd_col] = dataframe.apply(lambda x: convert_oods(x[odd_col]), axis = 1)
+    return dataframe
+
+
 def team_one_hot_encoding(dataframe):
+    """
+    def to use one hot encoding for team anmes
+    :param dataframe: dataframe to apply one hot encoding to
+    :return: one hot encoded df
+    """
     # one hot encoding for away team and home team features
     ats = pd.get_dummies(dataframe["AwayTeam"], prefix = "at")
     hts = pd.get_dummies(dataframe["HomeTeam"], prefix = "ht")
@@ -117,6 +161,16 @@ def processing(input_df, model_type, test_size):
 
 
 def formatting_for_passing_to_model(rawdata, exp_features, model_id):
+    """
+    def used to format rawdataset before it is passed to a model
+    :param rawdata: dataframe
+                    dataframe containing raw data
+    :param exp_features: list
+                        list of expected feature column names
+    :param model_id: str
+                    model id to create raw data for
+    :return: wragnled dataframe
+    """
     try:
         backtesting_data = rawdata[exp_features]
         return backtesting_data
