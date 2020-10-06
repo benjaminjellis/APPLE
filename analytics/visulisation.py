@@ -37,7 +37,6 @@ class Visualisation(object):
         This VIOLIN plot uses the calculate_accuracy_transform def to
         transform the aggregated weekly results into a box plot that
         helps visualise the spread (or volatility) of predictions made
-
         :param output_filepath:
         :return: nothing
         """
@@ -65,7 +64,6 @@ class Visualisation(object):
 
     def stratified_performance(self, metric, output_filepath = None):
         """
-
         :param metric:
         :param output_filepath:
         :return:
