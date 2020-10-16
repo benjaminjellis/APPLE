@@ -11,7 +11,7 @@ Phase 1 was a phase of real world testing where APPLE was tested against 3 human
 Weekly results and insights into APPLE's performance against human predictors can be found [here.](https://nbviewer.jupyter.org/github/benjaminjellis/APPLE/blob/master/weekly%20results_and_insights.ipynb)
 
 ## STRUDEL
-STRUDEL is more user-friendly way to solicit the user predictions that APPLE utilises. It is currently under development [here.](https://github.com/BrownKnight/STRUDEL)
+STRUDEL is more user-friendly way to solicit the user predictions that APPLE utilises, details on STRUDEL can be found [here.](https://github.com/BrownKnight/STRUDEL). 
 
 ## Credits
 My thanks to everyone at https://www.football-data.co.uk/ for providing the data APPLE is based on
