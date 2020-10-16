@@ -1,11 +1,11 @@
-Date,Week,Time,HomeTeam,AwayTeam,Dev,Marvyn
-2020-10-17,5,11:30:00,Everton,Liverpool,A,A
-2020-10-17,5,14:00:00,Chelsea,Southampton,H,H
-2020-10-17,5,16:30:00,Manchester City,Arsenal,D,H
-2020-10-17,5,19:00:00,Newcastle,Manchester United,H,A
-2020-10-18,5,11:00:00,Sheffield Utd,Fulham,H,H
-2020-10-18,5,13:00:00,Crystal Palace,Brighton,H,H
-2020-10-18,5,15:30:00,Tottenham,West Ham,H,H
-2020-10-18,5,18:15:00,Leicester,Aston Villa,D,H
-2020-10-19,5,16:30:00,West Brom,Burnley,H,H
-2020-10-19,5,19:00:00,Leeds,Wolves,H,A
+Date,Week,Time,HomeTeam,AwayTeam,Jordan Prediction,Leanne Prediction,Dev Prediction,Marvyn Prediction
+2020-10-17,5,11:30:00,Everton,Liverpool,A,A,A,A
+2020-10-17,5,14:00:00,Chelsea,Southampton,H,H,H,H
+2020-10-17,5,16:30:00,Manchester City,Arsenal,H,H,D,H
+2020-10-17,5,19:00:00,Newcastle,Manchester United,D,H,H,A
+2020-10-18,5,11:00:00,Sheffield Utd,Fulham,H,D,H,H
+2020-10-18,5,13:00:00,Crystal Palace,Brighton,D,A,H,H
+2020-10-18,5,15:30:00,Tottenham,West Ham,H,H,H,H
+2020-10-18,5,18:15:00,Leicester,Aston Villa,H,H,D,H
+2020-10-19,5,16:30:00,West Brom,Burnley,D,H,H,H
+2020-10-19,5,19:00:00,Leeds,Wolves,D,H,H,A

@@ -4,6 +4,7 @@ Miners are objects used to mine data that APPLE runs off
 
 from selenium import webdriver
 import pandas as pd
+from pandas import DataFrame
 import numpy as np
 from pathlib import Path
 from termcolor import colored
@@ -17,7 +18,7 @@ from datetime import timedelta
 import os
 
 
-def user_file_overwrite_check(filepath):
+def user_file_overwrite_check(filepath: str) -> bool:
     """
     Def used to check if a user wants to overwrite a file
     :param filepath: str
@@ -37,7 +38,7 @@ def user_file_overwrite_check(filepath):
         return True
 
 
-def convert_to_decimal(odds):
+def convert_to_decimal(odds: list) -> list:
     """
     Converts British style odds to decimal
     :param odds: list
@@ -62,9 +63,11 @@ def convert_to_decimal(odds):
     return reformatted_odds
 
 
-def odds_missing_warnings(df):
+def odds_missing_warnings(df: DataFrame):
     """
     def to audit warning if any data requested isn't mined
+    :param df: DataFrame
+    :return nothing
     """
     row_no, col_no = df.shape
     for i in range(0, row_no):
@@ -88,12 +91,12 @@ def odds_missing_warnings(df):
 
 class MineOdds(object):
     """"
-    Miner to mine odds for that are used for predictions
+    Miner to mine odds that are used for predictions
     """
     def __str__(self):
         return "MineOdds Miner"
 
-    def __init__(self, fixtures_file, mined_data_output):
+    def __init__(self, fixtures_file: str, mined_data_output: str):
         """
         :param fixtures_file: str
                 filepath of the fixtures to mine odds for
@@ -113,7 +116,7 @@ class MineOdds(object):
                 self.path + "/" + fixtures_file)
             self.fixtures = fixtures[["HomeTeam", "AwayTeam"]]
         except FileNotFoundError:
-            raise FileNotFoundError("User predictions file for week {} not found, try using MineFixtures".format(self.week))
+            raise FileNotFoundError("User predictions file {} not found, try using MineFixtures".format(fixtures_file))
 
         # we need to check that each of the HomeTeam and AwayTeam entries match the schema from raw data
         # use the team_cleaner def and a lambda function to do this
@@ -263,43 +266,3 @@ class MineOdds(object):
         odds_missing_warnings(df = output)
 
         output.to_json(self.path + "/" + self.mined_data_output)
-
-
-class MineFixtures(object):
-
-    def __str__(self):
-        return "MineFixture Miner"
-
-    def __init__(self, start_date, period, label):
-        """
-        :param start_date: str
-                date in DD-MM-YYYY format, start_date is the first date you want to grab fixtures for
-        :param period: int
-                number of days you wnant to grab fixtures for i.e. if you want to get the next 10 days of fixtures after
-                "20-07-2020" period should be 10 which will grab fixtures from 20-07-2020 -> 30-07-2020 inclusive
-        :param label: str
-                name of the directory you want to create to hold the mined fixtures, the filename will also use this label
-        """
-        self.start_date = datetime.strptime(start_date, "%d-%m-%Y")
-        self.period = period
-        self.label = label
-        self.end_date = self.start_date + timedelta(days = self.period )
-        self.url = "https://www.premierleague.com/fixtures"
-        self.driver = webdriver.Safari()
-        self.path = str(Path().absolute())
-        self.fixtures_output_file_loc = label + "up.csv"
-
-    def mine_fixtures(self):
-        # if the file does exist already ask the user if they want to overwrite it
-        if user_file_overwrite_check(self.fixtures_output_file_loc):
-            self.driver.get(url = self.url)
-            wait = WebDriverWait(self.driver, 30)
-            wait.until(EC.visibility_of_element_located((By.TAG_NAME, "div.data-competition-matches-list")))
-            dates = self.driver.find_elements_by_class_name("div.data-competition-matches-list")
-            for i in dates:
-                print(i.text)
-
-        else:
-            print("File will not be overwritten, shutting down miner")
-
-
