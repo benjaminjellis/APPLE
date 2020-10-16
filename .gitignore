@@ -166,8 +166,9 @@ cython_debug/
 # MacOS / PyCharm / Intelij Idea
 .DS_Store
 .idea
-GameOfLife.iml
-out
 
-# testing scripts
-data_mine.py
+# credentials files / dir
+credentials
+credentials.txt
+credentials.json
+

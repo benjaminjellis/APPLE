@@ -11,6 +11,8 @@ import pathlib
 from pathlib import Path
 import uuid
 import core.data_processing as dp
+from termcolor import colored
+from http.client import RemoteDisconnected
 
 import warnings
 from sklearn.exceptions import DataConversionWarning
@@ -36,12 +38,15 @@ class Train(object):
             os.makedirs(data_dir)
 
         # grab the latest data
-        urllib.request.urlretrieve("http://www.football-data.co.uk/mmz4281/2021/E0.csv", data_dir + "2021.csv")
-        urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1920/E0.csv", data_dir + "1920.csv")
-        urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1819/E0.csv", data_dir + "1819.csv")
+        try:
+            urllib.request.urlretrieve("http://www.football-data.co.uk/mmz4281/2021/E0.csv", data_dir + "2021.csv")
+            urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1920/E0.csv", data_dir + "1920.csv")
+            urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1819/E0.csv", data_dir + "1819.csv")
+        except RemoteDisconnected:
+            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead"), "red")
 
-        raw_data_18_19 = pd.read_csv(data_dir + "1920.csv")
-        raw_data_19_20 = pd.read_csv(data_dir + "1819.csv")
+        raw_data_18_19 = pd.read_csv(data_dir + "1819.csv")
+        raw_data_19_20 = pd.read_csv(data_dir + "1920.csv")
         raw_data_20_21 = pd.read_csv(data_dir + "2021.csv")
 
         self.raw_data_combined = dp.preprocessing(raw_data_19_20, raw_data_20_21)
