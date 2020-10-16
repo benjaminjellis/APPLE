@@ -8,7 +8,7 @@ from core.APPLE import APPLE
 # fixtures APPLE will predict results for
 fixtures_to_predict = "data/user_predictions/20_21/week5/week5userpredictions.csv"
 # data APPLE will use to make predictions
-data_for_predictions = "data/mined_data/20_21/week4data.json"
+data_for_predictions = "data/mined_data/20_21/week5.json"
 
 # data for APPLE to use to backtest saved models
 # data_to_backtest_on = "data/mined_data/19_20/w29f.csv"

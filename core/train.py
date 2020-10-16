@@ -13,6 +13,7 @@ import uuid
 import core.data_processing as dp
 from termcolor import colored
 from http.client import RemoteDisconnected
+from urllib.error import HTTPError
 
 import warnings
 from sklearn.exceptions import DataConversionWarning
@@ -22,7 +23,7 @@ warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
 class Train(object):
 
-    def __init__(self, model_type):
+    def __init__(self, model_type: str):
 
         """
         :param model_type: str
@@ -43,7 +44,10 @@ class Train(object):
             urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1920/E0.csv", data_dir + "1920.csv")
             urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1819/E0.csv", data_dir + "1819.csv")
         except RemoteDisconnected:
-            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead"), "red")
+            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead", "red"))
+        except HTTPError:
+            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead",
+                  "red"))
 
         raw_data_18_19 = pd.read_csv(data_dir + "1819.csv")
         raw_data_19_20 = pd.read_csv(data_dir + "1920.csv")
@@ -51,7 +55,7 @@ class Train(object):
 
         self.raw_data_combined = dp.preprocessing(raw_data_19_20, raw_data_20_21)
 
-    def train(self, epochs, verbose):
+    def train(self, epochs: int, verbose: bool) -> None:
         """
         Method to train model
         :param epochs: int
@@ -94,7 +98,7 @@ class Train(object):
         test = test.reshape(test_length, input_shape)
         test_labels = test_labels.reshape(test_length, 1)
 
-        def get_compiled_model():
+        def get_compiled_model() -> tf.keras.Sequential:
             """
             :return: compiled model
             """

@@ -55,7 +55,7 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
         user_predictions_content = response.content
         user_predictions_raw = pd.read_csv(io.StringIO(user_predictions_content.decode('utf-8')))
         user_predictions_raw["Week"] = week
-        # naive way to rename columns
+        # rename columns
         user_predictions_raw.rename(
             {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time"}, axis = 1,
             inplace = True)
@@ -67,6 +67,13 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
             user_predictions_output = user_predictions_output.sort_values(by = ["Date", "Time"], axis = 0)
             # remove ben and admin prediction cols, these are used only for testing
             user_predictions_output = user_predictions_output.drop(["ben", "Admin"], axis = 1)
+            # append " Prediction" to header of each user prediction column
+            user_predictions_cols = list(user_predictions_output.columns)
+            user_prediction_columns = [col for col in user_predictions_cols if col not in base_cols]
+            user_prediction_col_formatting_dict = {}
+            for i in user_prediction_columns :
+                user_prediction_col_formatting_dict[i] = i + " Prediction"
+            user_predictions_output.rename(user_prediction_col_formatting_dict, axis = 1, inplace = True)
         else:
             user_predictions_output = user_predictions_raw[base_cols]
         user_predictions_output.to_csv(output_loc, index_label = False, index = False)
