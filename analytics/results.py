@@ -92,6 +92,8 @@ class Predictions(object):
         self.path = str(pathlib.Path().absolute())
         self.user_predictions = load_json_or_csv(user_predictions)
         self.apple_predictions = load_json_or_csv(apple_predictions)
+        # convert date columns to datetime dtype to avoid any issues with
+        self.user_predictions["Date"] = pd.to_datetime(self.user_predictions["Date"])
 
         # standardise team names in user predictions
         self.user_predictions["HomeTeam"] = self.user_predictions.apply(
@@ -102,18 +104,13 @@ class Predictions(object):
 
         # get the user prediction columns
         user_prediction_cols_raw = self.user_predictions.columns.to_list()
-        user_prediction_cols = []
-
-        for col in user_prediction_cols_raw:
-            if "Prediction" in col:
-                user_prediction_cols.append(col)
+        user_prediction_cols = [col for col in user_prediction_cols_raw if "Prediction" in col]
 
         # aggregate weekly predictions
         this_week_predictions = this_week_predictions.merge(self.user_predictions, how = "inner",
                                                             on = ["HomeTeam", "AwayTeam"])
-
         # get dates
-        this_week_predictions["Date"] = self.user_predictions["Date"]
+        # this_week_predictions["Date"] = self.user_predictions["Date"]
 
         weekly_pred_output_cols = ["HomeTeam", "AwayTeam", "Date", "APPLE Prediction"] + user_prediction_cols
 
@@ -144,6 +141,8 @@ class Results(Predictions):
 
         # load in full time results
         ftr = load_json_or_csv(ftrs)
+        # cast date column as datetime dtype to avoid any merge issue on str representation of date
+        ftr["Date"] = pd.to_datetime(ftr["Date"])
 
         # standardise team names in ftrs
         ftr["HomeTeam"] = ftr.apply(
@@ -154,8 +153,10 @@ class Results(Predictions):
             axis = 1)
 
         # merge the user predictions and the full time results
-        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner")
-
+        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner", on = ["HomeTeam", "AwayTeam", "Date"])
+        ftr.to_csv("~/Desktop/ftr_check.csv")
+        self.this_week_predictions.to_csv("~/Desktop/twp_check.csv")
+        results_and_predictions_df.to_csv("~/Desktop/randpred_check.csv")
         # get number of matches were predicted for
         results_and_predictions_df_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
         results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]
