@@ -3,6 +3,7 @@ Script used to evaluate the predictions made by APPLE and human predictors
 """
 
 import pandas as pd
+from pandas import DataFrame
 from IPython.display import display
 from termcolor import colored
 from core.loaders import load_json_or_csv
@@ -12,9 +13,27 @@ from core.data_processing import team_name_standardisation
 pd.options.mode.chained_assignment = None
 
 
-def calculate_accuracy(df, user_prediction_cols, week = None):
+def calculate_accuracy(df: DataFrame, user_prediction_cols: list, week: str = None) -> DataFrame:
+    """
+    Def used to calculate the accuracyt
+    :param df: DataFrame to calculate accuracy for
+    :param user_prediction_cols:
+    :param week: str Optional
+    :return: DataFrame
+            Accuracy of user predictions
+    """
 
-    def correct_pred(col1, col2):
+    def correct_pred(col1: str, col2: str) -> int:
+        """
+        Def used to calculate if a predictor made a correct or incoorect prediction by comparing user
+        predictions to FTR row by row.
+        :param col1: str
+                Name of user column for calculate if the prediction is correct
+        :param col2: str
+                Name of the FTR column used to calculate if prediction is correct
+        :return: int
+                1 if prediction is correct, 0 if not
+        """
         if col1 == col2:
             return 1
         else:
@@ -23,11 +42,10 @@ def calculate_accuracy(df, user_prediction_cols, week = None):
     # find the number of matches that were predicted that week
     no_matches = df.shape[0]
     # get the name of the predictors
-    predictors = []
-    for col in user_prediction_cols:
-        predictors.append(col.strip(" Prediction"))
-        df[col.strip(" Prediction")] = df.apply(
-            lambda x: correct_pred(x[col], x['FTR']), axis = 1)
+    predictors = [col.replace(" Prediction", "") for col in user_prediction_cols]
+    df.to_csv("~/Desktop/intermediate_check.csv")
+    for i in range(0,len(predictors)):
+        df[predictors[i]] = df.apply(lambda x: correct_pred(x[user_prediction_cols[i]], x['FTR']), axis = 1)
     summed_filtered_df = df.sum()
     summed_filtered_df = summed_filtered_df[predictors]
     summed_results_df = pd.DataFrame(
@@ -38,14 +56,20 @@ def calculate_accuracy(df, user_prediction_cols, week = None):
     return summed_results_df
 
 
-def calculate_accuracy_transform(df, mode):
+def calculate_accuracy_transform(df: DataFrame, mode: str) -> DataFrame:
+    """
+    Def to perform accuracy transformed on passed DataFrame
+    :param df: DataFrame
+            DataFrame to transform
+    :param mode: str
+            One of weekly or "overall"
+    :return: DateFrame
+            Accuracy transformed DataFrame
+    """
     # get the columns of the dataframe
     input_df_columns = df.columns.to_list()
     # get just the prediction columns
-    user_prediction_cols = []
-    for column in input_df_columns:
-        if "Prediction" in column:
-            user_prediction_cols.append(column)
+    user_prediction_cols = [column for column in input_df_columns if "Prediction" in column]
 
     if mode == "weekly":
         # define the empty transformed (and output) df
@@ -73,7 +97,16 @@ def calculate_accuracy_transform(df, mode):
     return accuracy_transform_df
 
 
-def winners_from_dataframe(dataframe, find_max_of, get_winners_from):
+def winners_from_dataframe(dataframe: DataFrame, find_max_of: str, get_winners_from: str) -> str:
+    """
+    :param dataframe: DataFrame
+            DataFrame to get winner from
+    :param find_max_of: str
+            Column to find the max value for
+    :param get_winners_from: str
+            Which column to index for returning
+    :return:
+    """
     max_val = dataframe[find_max_of].max()
     winners = dataframe[dataframe[find_max_of] == max_val][get_winners_from].to_list()
     winners_str = ','.join(winners)
@@ -82,7 +115,7 @@ def winners_from_dataframe(dataframe, find_max_of, get_winners_from):
 
 class Predictions(object):
 
-    def __init__(self, user_predictions, apple_predictions):
+    def __init__(self, user_predictions: str, apple_predictions: str) -> None:
         """
         :param user_predictions: str
                 filepath for the user predictions input file
@@ -109,8 +142,6 @@ class Predictions(object):
         # aggregate weekly predictions
         this_week_predictions = this_week_predictions.merge(self.user_predictions, how = "inner",
                                                             on = ["HomeTeam", "AwayTeam"])
-        # get dates
-        # this_week_predictions["Date"] = self.user_predictions["Date"]
 
         weekly_pred_output_cols = ["HomeTeam", "AwayTeam", "Date", "APPLE Prediction"] + user_prediction_cols
 
@@ -126,7 +157,7 @@ class Predictions(object):
 
 class Results(Predictions):
 
-    def aggregate(self, aggregated_results_file, ftrs, winners_log):
+    def aggregate(self, aggregated_results_file: str, ftrs: str, winners_log: str) -> None:
         """
         :param aggregated_results_file:
         :param ftrs: str
@@ -154,9 +185,7 @@ class Results(Predictions):
 
         # merge the user predictions and the full time results
         results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner", on = ["HomeTeam", "AwayTeam", "Date"])
-        ftr.to_csv("~/Desktop/ftr_check.csv")
-        self.this_week_predictions.to_csv("~/Desktop/twp_check.csv")
-        results_and_predictions_df.to_csv("~/Desktop/randpred_check.csv")
+
         # get number of matches were predicted for
         results_and_predictions_df_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
         results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]

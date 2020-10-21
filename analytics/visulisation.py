@@ -7,16 +7,20 @@ from IPython.display import display
 
 class Visualisation(object):
 
-    def __init__(self, aggregated_results_filepath):
+    def __init__(self, aggregated_results_filepath: str):
+        """
+        :param aggregated_results_filepath: str
+                filepath of aggregated results file to update
+        """
         # define path
         self.path = str(Path().absolute())
         # user loader to load aggregated results file
         self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_results_filepath)
+        self.aggregated_results.to_csv("~/Desktop/intermediate_check.csv")
         # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
 
-
-    def predictor_team_history(self, predictor, team):
+    def predictor_team_history(self, predictor: str, team: str) -> None:
         """
         Shoes a user's predictions involving a given team in tabular format
         :param predictor: str
@@ -31,13 +35,14 @@ class Visualisation(object):
         df_to_display = f_df[cols_to_display]
         display(df_to_display)
 
-
-    def volatility(self, output_filepath = None):
+    def volatility(self, output_filepath: str = None) -> None:
         """
         This VIOLIN plot uses the calculate_accuracy_transform def to
         transform the aggregated weekly results into a box plot that
         helps visualise the spread (or volatility) of predictions made
-        :param output_filepath:
+        :param output_filepath: str OPTIONAL
+                if the output is required to be saved as an HTML file the output filepath
+                can be specified
         :return: nothing
         """
         fig_violin = px.violin(self.weekly_summed,
@@ -52,7 +57,7 @@ class Visualisation(object):
         if output_filepath:
             fig_violin.write_html(self.path + "/analytics/test.html")
 
-    def time_series(self, output_filepath = None):
+    def time_series(self, output_filepath: str = None) -> None:
         fig_ts = px.line(self.weekly_summed,
                          x = "Week",
                          y = "Accuracy of Predictions (%)",
@@ -62,11 +67,14 @@ class Visualisation(object):
         if output_filepath:
             fig_ts.write_html(self.path + "/analytics/test.html")
 
-    def stratified_performance(self, metric, output_filepath = None):
+    def stratified_performance(self, metric: str, output_filepath: str = None) -> None:
         """
-        :param metric:
-        :param output_filepath:
-        :return:
+        :param metric: str
+                "top 6 teams" or  "newly promoted teams"
+        :param output_filepath: str OPTIONAL
+                if the output is required to be saved as an HTML file the output filepath
+                can be specified
+        :return: nothing
         """
         if metric == "top 6 teams":
             sp_filter = ["Arsenal", "Liverpool", "Chelsea", "Man City", "Man United", "Tottenham"]
