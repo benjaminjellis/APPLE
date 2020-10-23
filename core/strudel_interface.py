@@ -9,6 +9,8 @@ import pandas as pd
 from termcolor import colored
 from pathlib import Path
 
+path = str(Path().absolute().parent)
+
 
 def validate_date(date: str):
     """

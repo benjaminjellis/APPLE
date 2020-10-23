@@ -93,7 +93,7 @@ class APPLE(object):
         self._upper_limit = None
         self._prct_to_remove = None
 
-    def run(self):
+    def run(self, return_filepath: bool = False):
         """
         Method to make predictions on passed data
         :return: Nothing, produces predictions and outputs them to file
@@ -126,6 +126,8 @@ class APPLE(object):
             predictions_file_output_loc = self.job_result_dir + model + "_predicted_results.csv"
             if user_file_overwrite_check(predictions_file_output_loc):
                 predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
+                if return_filepath:
+                    return predictions_file_output_loc
 
     def backtest(self, data_to_backtest_on: list, ftrs: str = None):
         """

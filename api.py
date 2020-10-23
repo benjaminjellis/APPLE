@@ -1,12 +1,13 @@
 from flask import Flask, jsonify, make_response, request, abort
 import uuid
-from core.APPLE import APPLE
-from core.strudel_interface import validate_date
-import atexit
 from pathlib import Path
 import threading
 
-path = str(Path().absolute().parent)
+from core.strudel_interface import validate_date
+from core.APPLE import APPLE
+
+
+path = str(Path().absolute())
 
 
 def update_task_status(task_id: str, status_update: str, task_list: list) -> None:
@@ -27,14 +28,13 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
     temp_dir = Path(temp_dir)
     if not temp_dir.exists():
         temp_dir.mkdir(parents = True)
-    # create an apple object
     apple_object = APPLE(use_strudel = True,
                          start_date = task['start_date'],
                          end_date = task['end_date'],
-                         fixtures_to_predict = "temp_data/" + task['task_id'] + "/" + task[
+                         fixtures_to_predict = "temporary_data/" + task['task_id'] + "/" + task[
                              'task_id'] + "_fixtures_to_predict.csv",
                          # interface with STRUDEL is required here
-                         data_for_predictions = data_for_predictions,
+                         data_for_predictions = task['data_for_predictions'],
                          job_name = task['job_name'],
                          week = 5)
     # check if backtesting is requested, if so complete
@@ -45,25 +45,29 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
         else:
             apple_object.backtest(data_to_backtest_on = task["data_to_backtest_on"])
     update_task_status(task_id = task["task_id"], status_update = "Making predictions", task_list = task_list)
-    apple_object.run()
+    apple_predictions_filepath = apple_object.run(return_filepath = True)
+    # use STRUDEL endpoint here to return the above results
     if task['cleanup'] == "true":
-        update_task_status(task_id = task["task_id"], status_update = "Cleaning up saved models directories", task_list = task_list)
+        update_task_status(task_id = task["task_id"], status_update = "Cleaning up saved models directories",
+                           task_list = task_list)
         apple_object.cleanup()
+    temp_dir.rmdir()
     update_task_status(task_id = task["task_id"], status_update = "Complete",
                        task_list = task_list)
 
 
-
-def at_exit():
-    """
-    :return:
-    """
-    pass
-
-
 app = Flask(__name__)
-atexit.register(at_exit)
 tasks = []
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+@app.route('/apple/api/v1.0/tasks', methods = ['GET'])
+def get_tasks():
+    return jsonify({'tasks': tasks})
 
 
 @app.route('/apple/api/v1.0/tasks', methods = ['POST'])
@@ -93,35 +97,17 @@ def create_task():
     validate_date(date = task["end_date"])
     update_task_status(task_id = task_id, status_update = "Running", task_list = tasks)
     # set up a thread for APPLE to run in background
-    apple_thread = threading.Thread(target=rest_apple_interface, args=(task, tasks,))
+    apple_thread = threading.Thread(target = rest_apple_interface, args = (task, tasks,))
     apple_thread.start()
     return jsonify({'task': task}), 201
 
 
-@app.route('/apple/api/v1.0/tasks', methods = ['GET'])
-def get_tasks():
-    return jsonify({'tasks': tasks})
-
-
-@app.route('/apple/api/v1.0/tasks/<int:task_id>', methods=['GET'])
+@app.route('/apple/api/v1.0/tasks/<int:task_id>', methods = ['GET'])
 def get_task(task_id):
     task = [task for task in tasks if task['id'] == task_id]
     if len(task) == 0:
         abort(404)
         return jsonify({'task': task[0]})
-
-
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
-
-
-@app.before_first_request
-def update_tasks():
-    """
-    load in meta data about all tasks
-    """
-    pass
 
 
 if __name__ == '__main__':
