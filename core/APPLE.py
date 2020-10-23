@@ -23,9 +23,10 @@ class APPLE(object):
         Constructor loads file into memory, creates file paths, results directories and merges data and fixtures file
         :param use_strudel: bool
                 whether to get fixtures to predict from STRUDEL or not
-        :param fixtures_to_predict: str
+        :param fixtures_to_predict: str Optional
                 filepath of the file that contains the fixtures to predict, or if using STRUDEL the filepath where
-                obtained user predictions are saved
+                obtained user predictions are saved. Only needs to be passed if fixtures to predict file needs to be saved
+                locally
         :param data_for_predictions: str
                 filepath for the data a model will use for predictions, file should be json or csv
         :param job_name: str
