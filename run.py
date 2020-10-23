@@ -6,9 +6,9 @@ from core.APPLE import APPLE
 
 
 # fixtures APPLE will predict results for
-fixtures_to_predict = "data/user_predictions/20_21/week5/week5userpredictions.csv"
+fixtures_to_predict = "data/user_predictions/20_21/week6/week6userpredictions.csv"
 # data APPLE will use to make predictions
-data_for_predictions = "data/mined_data/20_21/week5.json"
+data_for_predictions = "data/mined_data/20_21/week6.json"
 
 # data for APPLE to use to backtest saved models
 # data_to_backtest_on = "data/mined_data/19_20/w29f.csv"
@@ -16,12 +16,12 @@ data_for_predictions = "data/mined_data/20_21/week5.json"
 
 # create an instance of APPLE called "weekly_run", if you want to use STRUDEL
 weekly_run = APPLE(use_strudel = True,
-                   start_date = "2020-10-17",
-                   end_date = "2020-10-20",
+                   start_date = "2020-10-22",
+                   end_date = "2020-10-27",
                    fixtures_to_predict = fixtures_to_predict,
                    data_for_predictions = data_for_predictions,
-                   job_name = "week5",
-                   week = 5)
+                   job_name = "week6",
+                   week = 6)
 
 # if you want to use a local file
 """"

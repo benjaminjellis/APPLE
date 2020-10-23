@@ -138,7 +138,6 @@ class Predictions(object):
         # get the user prediction columns
         user_prediction_cols_raw = self.user_predictions.columns.to_list()
         user_prediction_cols = [col for col in user_prediction_cols_raw if "Prediction" in col]
-
         # aggregate weekly predictions
         this_week_predictions = this_week_predictions.merge(self.user_predictions, how = "inner",
                                                             on = ["HomeTeam", "AwayTeam"])

@@ -1,5 +1,5 @@
 """
-Defs used to do some data processing before training of models
+Def used across APPLE for data processing
 """
 
 import pandas as pd
@@ -8,9 +8,10 @@ from core.scaler import scale_df
 import numpy as np
 from termcolor import colored
 from fuzzywuzzy import process
+from pandas import DataFrame
 
 
-def convert_oods(x):
+def convert_oods(x: str) -> float:
     """
     def used to convert British Style odds to European style
     :param x: str
@@ -25,7 +26,7 @@ def convert_oods(x):
     return div + 1
 
 
-def clean_mined_data(dataframe):
+def clean_mined_data(dataframe: DataFrame):
     """
     Def to clean a dataframe so that all odds are european style
     :param dataframe: dataframe to convert
