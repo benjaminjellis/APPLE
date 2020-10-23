@@ -2,9 +2,11 @@ from flask import Flask, jsonify, make_response, request, abort
 import uuid
 from core.APPLE import APPLE
 from core.strudel_interface import validate_date
+import atexit
+from pathlib import Path
 import threading
-import time
-import os
+
+path = str(Path().absolute().parent)
 
 
 def update_task_status(task_id: str, status_update: str, task_list: list) -> None:
@@ -21,6 +23,10 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
     :return: nothing
     """
     # create temp dir to store file used when making predictions
+    temp_dir = path + "/temporary_data/" + task['task_id']
+    temp_dir = Path(temp_dir)
+    if not temp_dir.exists():
+        temp_dir.mkdir(parents = True)
     # create an apple object
     apple_object = APPLE(use_strudel = True,
                          start_date = task['start_date'],
@@ -47,8 +53,16 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
                        task_list = task_list)
 
 
-app = Flask(__name__)
 
+def at_exit():
+    """
+    :return:
+    """
+    pass
+
+
+app = Flask(__name__)
+atexit.register(at_exit)
 tasks = []
 
 
@@ -79,8 +93,8 @@ def create_task():
     validate_date(date = task["end_date"])
     update_task_status(task_id = task_id, status_update = "Running", task_list = tasks)
     # set up a thread for APPLE to run in background
-    # apple_thread = threading.Thread(target=rest_apple_interface, args=(task, tasks,))
-    # apple_thread.start()
+    apple_thread = threading.Thread(target=rest_apple_interface, args=(task, tasks,))
+    apple_thread.start()
     return jsonify({'task': task}), 201
 
 
