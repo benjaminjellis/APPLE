@@ -1,11 +1,11 @@
-Date,Week,Time,HomeTeam,AwayTeam,FixtureID,Admin Prediction
-2020-10-30,7,20:00:00,Wolves,Crystal Palace,58,D
-2020-10-31,7,12:30:00,Sheffield Utd,Manchester City,59,A
-2020-10-31,7,15:00:00,Burnley,Chelsea,60,A
-2020-10-31,7,17:30:00,Liverpool,West Ham,61,A
-2020-11-01,7,12:00:00,Aston Villa,Southampton,62,H
-2020-11-01,7,14:00:00,Newcastle,Everton,63,H
-2020-11-01,7,16:30:00,Manchester United,Arsenal,64,A
-2020-11-01,7,19:15:00,Tottenham,Brighton,65,H
-2020-11-02,7,17:30:00,Fulham,West Brom,66,H
-2020-11-02,7,20:00:00,Leeds,Leicester,67,A
+Date,Week,Time,HomeTeam,AwayTeam,fixtureId Prediction,Admin Prediction,Dev Prediction,Jordan Prediction,Leanne Prediction,Marvyn Prediction
+2020-10-30,7,20:00:00,Wolves,Crystal Palace,58,D,H,H,D,A
+2020-10-31,7,12:30:00,Sheffield Utd,Manchester City,59,A,D,A,A,A
+2020-10-31,7,15:00:00,Burnley,Chelsea,60,A,A,A,A,A
+2020-10-31,7,17:30:00,Liverpool,West Ham,61,A,H,H,H,H
+2020-11-01,7,12:00:00,Aston Villa,Southampton,62,H,H,D,A,D
+2020-11-01,7,14:00:00,Newcastle,Everton,63,H,A,A,A,A
+2020-11-01,7,16:30:00,Manchester United,Arsenal,64,A,D,H,H,H
+2020-11-01,7,19:15:00,Tottenham,Brighton,65,H,H,H,H,H
+2020-11-02,7,17:30:00,Fulham,West Brom,66,H,A,A,D,D
+2020-11-02,7,20:00:00,Leeds,Leicester,67,A,H,H,A,A

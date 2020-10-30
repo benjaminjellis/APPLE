@@ -75,6 +75,11 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
                 # take out my test predictions
                 user_prediction_columns.remove("Ben")
                 user_predictions_output = user_predictions_output.drop(["Ben"], axis = 1)
+            if "APPLE" in user_prediction_columns:
+                # take out my APPLE predictions
+                user_prediction_columns.remove("APPLE")
+                user_predictions_output = user_predictions_output.drop(["APPLE"], axis = 1)
+
             user_prediction_col_formatting_dict = {}
             for i in user_prediction_columns :
                 user_prediction_col_formatting_dict[i] = i + " Prediction"
