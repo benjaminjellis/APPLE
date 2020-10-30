@@ -47,6 +47,11 @@ def clean_mined_data(dataframe: DataFrame):
         # if odds in the odd_col are british format convert the entire column to euro format
         if "/" in check_cell:
             dataframe[odd_col] = dataframe.apply(lambda x: convert_oods(x[odd_col]), axis = 1)
+    # standardise team names
+    dataframe["HomeTeam"] = dataframe.apply(lambda x: team_name_standardisation(x["HomeTeam"]),
+                                                                axis = 1)
+    dataframe["AwayTeam"] = dataframe.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
+                                                                axis = 1)
     return dataframe
 
 
