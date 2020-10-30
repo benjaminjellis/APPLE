@@ -23,9 +23,10 @@ class APPLE(object):
         Constructor loads file into memory, creates file paths, results directories and merges data and fixtures file
         :param use_strudel: bool
                 whether to get fixtures to predict from STRUDEL or not
-        :param fixtures_to_predict: str
+        :param fixtures_to_predict: str Optional
                 filepath of the file that contains the fixtures to predict, or if using STRUDEL the filepath where
-                obtained user predictions are saved
+                obtained user predictions are saved. Only needs to be passed if fixtures to predict file needs to be saved
+                locally
         :param data_for_predictions: str
                 filepath for the data a model will use for predictions, file should be json or csv
         :param job_name: str
@@ -62,20 +63,20 @@ class APPLE(object):
         # load in the data to use to make predictions
         data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
 
-        # clean data_for_predictions_to_merge
+        # clean data_for_predictions_to_merge (mined data) - this is conversion from british style odds
+        # to european ones, please team name standardisation
         data_for_predictions_to_merge = clean_mined_data(data_for_predictions_to_merge)
 
         # extract data for predictions from mined data by checking which fixtures
         # to predict
-        fixtures_to_predict = self.fixtures_to_predict[["HomeTeam", "AwayTeam", "Week"]]
+        fixtures_to_predict = self.fixtures_to_predict[["HomeTeam", "AwayTeam", "Week", "FixtureID"]]
         # standardise team names to make sure merge happens correctly
         fixtures_to_predict["HomeTeam"] = fixtures_to_predict.apply(lambda x: team_name_standardisation(x["HomeTeam"]),
                                                                     axis = 1)
         fixtures_to_predict["AwayTeam"] = fixtures_to_predict.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
                                                                     axis = 1)
         # merge the fixtures and data
-        self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "inner")
-
+        self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "outer", on = ["HomeTeam", "AwayTeam"])
         # results directory
         self.results_dir = self.path + "/results/20_21/"
         if not os.path.exists(self.results_dir):
@@ -92,7 +93,7 @@ class APPLE(object):
         self._upper_limit = None
         self._prct_to_remove = None
 
-    def run(self):
+    def run(self, return_results: bool = False):
         """
         Method to make predictions on passed data
         :return: Nothing, produces predictions and outputs them to file
@@ -122,9 +123,12 @@ class APPLE(object):
             predicted_results = Predict(model_id = model).predict(
                 fixtures_to_predict = self.fixtures_and_data_for_prediction)
             print(colored(predicted_results, "blue"))
-            predictions_file_output_loc = self.job_result_dir + model + "_predicted_results.csv"
-            if user_file_overwrite_check(predictions_file_output_loc):
-                predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
+            if return_results:
+                return predicted_results
+            else:
+                predictions_file_output_loc = self.job_result_dir + model + "_predicted_results.csv"
+                if user_file_overwrite_check(predictions_file_output_loc):
+                    predicted_results.to_csv(predictions_file_output_loc, index_label = False, index = False)
 
     def backtest(self, data_to_backtest_on: list, ftrs: str = None):
         """

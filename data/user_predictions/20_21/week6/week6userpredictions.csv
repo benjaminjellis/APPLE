@@ -1,11 +1,11 @@
-Date,Week,Time,HomeTeam,AwayTeam,Admin Prediction,Dev Prediction,Jordan Prediction,Leanne Prediction,Marvyn Prediction
-23/10/2020,6,19:00:00,Aston Villa,Leeds,A,H,H,H,H
-24/10/2020,6,11:30:00,West Ham,Manchester City,A,A,A,A,A
-24/10/2020,6,14:00:00,Fulham,Crystal Palace,A,D,A,D,A
-24/10/2020,6,16:30:00,Manchester United,Chelsea,A,D,H,D,H
-24/10/2020,6,19:00:00,Liverpool,Sheffield Utd,H,H,H,H,H
-25/10/2020,6,13:00:00,Southampton,Everton,A,A,D,A,D
-25/10/2020,6,15:30:00,Wolves,Newcastle,H,H,H,H,H
-25/10/2020,6,18:15:00,Arsenal,Leicester,H,H,H,H,H
-26/10/2020,6,16:30:00,Brighton,West Brom,A,D,H,D,A
-26/10/2020,6,19:00:00,Burnley,Tottenham,A,A,A,A,A
+Date,Week,Time,HomeTeam,AwayTeam,FixtureID,Admin Prediction,Dev Prediction,Jordan Prediction,Leanne Prediction,Marvyn Prediction
+2020-10-23,6,19:00:00,Aston Villa,Leeds,47,A,H,H,H,H
+2020-10-24,6,11:30:00,West Ham,Manchester City,48,A,A,A,A,A
+2020-10-24,6,14:00:00,Fulham,Crystal Palace,49,A,D,A,D,A
+2020-10-24,6,16:30:00,Manchester United,Chelsea,50,A,D,H,D,H
+2020-10-24,6,19:00:00,Liverpool,Sheffield Utd,51,H,H,H,H,H
+2020-10-25,6,13:00:00,Southampton,Everton,52,A,A,D,A,D
+2020-10-25,6,15:30:00,Wolves,Newcastle,53,H,H,H,H,H
+2020-10-25,6,18:15:00,Arsenal,Leicester,54,H,H,H,H,H
+2020-10-26,6,16:30:00,Brighton,West Brom,55,A,D,H,D,A
+2020-10-26,6,19:00:00,Burnley,Tottenham,56,A,A,A,A,A

@@ -6,8 +6,10 @@ import json
 import datetime
 import io
 import pandas as pd
-from termcolor import colored
 from pathlib import Path
+from termcolor import colored
+
+path = str(Path().absolute().parent)
 
 
 def validate_date(date: str):
@@ -58,14 +60,15 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
         user_predictions_raw["Week"] = week
         # rename columns
         user_predictions_raw.rename(
-            {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time"}, axis = 1,
+            {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time", "fixtureId": "FixtureID"}, axis = 1,
             inplace = True)
         # rearrange cols
-        base_cols = ["Date", "Week", "Time", "HomeTeam", "AwayTeam"]
+        base_cols = ["Date", "Week", "Time", "HomeTeam", "AwayTeam", "FixtureID"]
         if include_predictions:
             user_predictions_output = user_predictions_raw[
                 base_cols + [c for c in user_predictions_raw if c not in base_cols]]
             user_predictions_output = user_predictions_output.sort_values(by = ["Date", "Time"], axis = 0)
+            # append " Prediction" to header of each user prediction column
             user_predictions_cols = list(user_predictions_output.columns)
             user_prediction_columns = [col for col in user_predictions_cols if col not in base_cols]
             if "Ben" in user_prediction_columns:
@@ -76,6 +79,7 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
                 # take out my APPLE predictions
                 user_prediction_columns.remove("APPLE")
                 user_predictions_output = user_predictions_output.drop(["APPLE"], axis = 1)
+
             user_prediction_col_formatting_dict = {}
             for i in user_prediction_columns :
                 user_prediction_col_formatting_dict[i] = i + " Prediction"
@@ -155,3 +159,10 @@ class StrudelInterface(object):
                                     output_loc = output_loc,
                                     include_predictions = False,
                                     authentication = self._token_header)
+
+    def return_predictions(self, prediction_details: dict):
+        end_point = "https://beatthebot.co.uk/iapi/predictions"
+        response = requests.put(end_point, headers = self._token_header, json = prediction_details)
+        print(response.status_code)
+        if response.status_code == 200:
+            print(colored("APPLE prediction for fixture with id {} exported to Strudel".format(prediction_details["fixture"]), "green"))

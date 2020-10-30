@@ -38,6 +38,7 @@ class Predict(object):
         """
         home_teams_to_predict = fixtures_to_predict["HomeTeam"].to_list()
         away_teams_to_predict = fixtures_to_predict["AwayTeam"].to_list()
+        fixture_ids = fixtures_to_predict["FixtureID"].to_list()
         #fixtures_to_predict["fixture"] = fixtures_to_predict["HomeTeam"] + " v " + fixtures_to_predict["AwayTeam"]
         #list_of_fixtures = fixtures_to_predict["fixture"].to_list()
 
@@ -71,7 +72,7 @@ class Predict(object):
                 final_prediction.append("D")
 
         predicted_result = pd.DataFrame(
-            {'HomeTeam': home_teams_to_predict, "AwayTeam": away_teams_to_predict,'p(H)': prediction[:, 0], 'p(A)': prediction[:, 1], 'p(D)': prediction[:, 2],
+            {'HomeTeam': home_teams_to_predict, "AwayTeam": away_teams_to_predict, "FixtureID": fixture_ids, 'p(H)': prediction[:, 0], 'p(A)': prediction[:, 1], 'p(D)': prediction[:, 2],
              "APPLE Prediction": final_prediction})
 
         return predicted_result
