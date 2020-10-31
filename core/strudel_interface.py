@@ -8,6 +8,9 @@ import io
 import pandas as pd
 from pathlib import Path
 from termcolor import colored
+from datetime import datetime
+import codecs
+
 
 path = str(Path().absolute().parent)
 
@@ -102,7 +105,7 @@ class StrudelInterface(object):
         """
         Constructor is used to log in to STRUDEL endpoint
         :param credentials_filepath: str
-                filepath of json file containing the credentials to log in
+                filepath of json file containing credentials for log in
         """
         # use the constructor of the class to login
         print(colored("Attempting to log into STRUDEL....", "red"))
@@ -163,6 +166,45 @@ class StrudelInterface(object):
     def return_predictions(self, prediction_details: dict):
         end_point = "https://beatthebot.co.uk/iapi/predictions"
         response = requests.put(end_point, headers = self._token_header, json = prediction_details)
-        print(response.status_code)
         if response.status_code == 200:
             print(colored("APPLE prediction for fixture with id {} exported to Strudel".format(prediction_details["fixture"]), "green"))
+
+    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str) -> None:
+        """
+        Def to upload plotly html visualisations to STRUDEL where they are displayed
+        :param html_filepath: str
+                filepath for the HTML file to upload
+        :param visualisation_title: str
+                title of the visualisation to upload
+        :param notes: str
+                comma separated list of notes to display along with the plot on STRUDEL
+        :return:
+        """
+        end_point = "https://beatthebot.co.uk/iapi/analytics"
+        # read in html file as a string
+        html_file = codecs.open(html_filepath, 'r')
+        html_contents = html_file.read()
+        today = datetime.today().strftime("%Y_%m_%d")
+        visualisation_name = visualisation_title + "_" + today
+        body = {
+            "name": visualisation_name,
+            "heading": visualisation_title,
+            "html": html_contents,
+            "tagLineList": notes
+        }
+        """
+        html_contents = html_contents.replace("<html>", "")
+        html_contents = html_contents.replace("</html>", "")
+        html_contents = html_contents.replace('head><meta charset="utf-8" /></head>', "")
+        html_contents = html_contents.replace("<body>", "")
+        html_contents = html_contents.replace("</body>", "")
+        print(html_contents)
+        """
+        response = requests.put(end_point, headers = self._token_header, json = body)
+        if response.status_code == 200:
+            print(colored("Visualisation with title {} successfully uploaded ".format(visualisation_title), "green"))
+        else:
+            print(colored("Visualisation with title {} failed to upload ".format(visualisation_title), "red"))
+            print(response.status_code)
+            print(response.content)
+
