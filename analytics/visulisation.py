@@ -55,7 +55,7 @@ class Visualisation(object):
         fig_violin.update_yaxes(range = [0, 100])
         fig_violin.show()
         if output_filepath:
-            fig_violin.write_html(self.path + "/analytics/test.html")
+            fig_violin.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)
 
     def time_series(self, output_filepath: str = None) -> None:
         fig_ts = px.line(self.weekly_summed,
@@ -65,7 +65,7 @@ class Visualisation(object):
                          hover_name = "Predictor")
         fig_ts.show()
         if output_filepath:
-            fig_ts.write_html(self.path + "/analytics/test.html")
+            fig_ts.write_html(self.path + "/" + output_filepath)
 
     def stratified_performance(self, metric: str, output_filepath: str = None) -> None:
         """
@@ -94,4 +94,4 @@ class Visualisation(object):
                               template = "simple_white")
         fig_sp.show()
         if output_filepath:
-            fig_sp.write_html(self.path + "/analytics/test.html")
+            fig_sp.write_html(self.path + "/" + output_filepath)
