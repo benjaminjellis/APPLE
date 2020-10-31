@@ -1,4 +1,4 @@
-Date,Week,Time,HomeTeam,AwayTeam,fixtureId Prediction,Admin Prediction,Dev Prediction,Jordan Prediction,Leanne Prediction,Marvyn Prediction
+Date,Week,Time,HomeTeam,AwayTeam,FixtureID,Admin Prediction,Dev Prediction,Jordan Prediction,Leanne Prediction,Marvyn Prediction
 2020-10-30,7,20:00:00,Wolves,Crystal Palace,58,D,H,H,D,A
 2020-10-31,7,12:30:00,Sheffield Utd,Manchester City,59,A,D,A,A,A
 2020-10-31,7,15:00:00,Burnley,Chelsea,60,A,A,A,A,A
