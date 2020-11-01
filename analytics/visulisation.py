@@ -7,22 +7,31 @@ from IPython.display import display
 
 class Visualisation(object):
 
-    def __init__(self, aggregated_results_filepath: str):
+    def __init__(self, use_strudel: bool = False, aggregated_data_filepath: str = None):
         """
-        :param aggregated_results_filepath: str
+        :param use_strudel: bool
+                Default: False
+                Whether to get aggregated results from STRUDEL or to use a local file
+        :param aggregated_data_filepath: str
+                Optional - Required if use_strudel is False
                 filepath of aggregated results file to update
         """
-        # define path
-        self.path = str(Path().absolute())
-        # user loader to load aggregated results file
-        self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_results_filepath)
-        self.aggregated_results.to_csv("~/Desktop/intermediate_check.csv")
-        # use calculate_accuracy_transform def to create the weekly summed
+        if use_strudel:
+            # Need to add somehting here using the STRUDEL interface to get up to date aggreagted results.
+            # once got from strudel save locally
+            # load then use calculate_accuracy_transform
+            raise ValueError("Visualisation class does not yet support use of STRUDEl")
+        else:
+            # define path
+            self.path = str(Path().absolute())
+            # user loader to load aggregated results file
+            self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_data_filepath)
+            # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
 
     def predictor_team_history(self, predictor: str, team: str) -> None:
         """
-        Shoes a user's predictions involving a given team in tabular format
+        Showss a user's predictions involving a given team in tabular format
         :param predictor: str
                     initials of predictor to show predictions for
         :param team: str
@@ -65,7 +74,7 @@ class Visualisation(object):
                          hover_name = "Predictor")
         fig_ts.show()
         if output_filepath:
-            fig_ts.write_html(self.path + "/" + output_filepath)
+            fig_ts.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)
 
     def stratified_performance(self, metric: str, output_filepath: str = None) -> None:
         """
@@ -94,4 +103,4 @@ class Visualisation(object):
                               template = "simple_white")
         fig_sp.show()
         if output_filepath:
-            fig_sp.write_html(self.path + "/" + output_filepath)
+            fig_sp.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)

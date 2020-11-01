@@ -169,7 +169,7 @@ class StrudelInterface(object):
         if response.status_code == 200:
             print(colored("APPLE prediction for fixture with id {} exported to Strudel".format(prediction_details["fixture"]), "green"))
 
-    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str) -> None:
+    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str) -> bool:
         """
         Def to upload plotly html visualisations to STRUDEL where they are displayed
         :param html_filepath: str
@@ -192,19 +192,13 @@ class StrudelInterface(object):
             "html": html_contents,
             "tagLineList": notes
         }
-        """
-        html_contents = html_contents.replace("<html>", "")
-        html_contents = html_contents.replace("</html>", "")
-        html_contents = html_contents.replace('head><meta charset="utf-8" /></head>', "")
-        html_contents = html_contents.replace("<body>", "")
-        html_contents = html_contents.replace("</body>", "")
-        print(html_contents)
-        """
         response = requests.put(end_point, headers = self._token_header, json = body)
         if response.status_code == 200:
             print(colored("Visualisation with title {} successfully uploaded ".format(visualisation_title), "green"))
+            return True
         else:
             print(colored("Visualisation with title {} failed to upload ".format(visualisation_title), "red"))
             print(response.status_code)
             print(response.content)
+            return False
 

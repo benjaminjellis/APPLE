@@ -14,6 +14,7 @@ from pathlib import Path
 import threading
 from pandas import DataFrame
 from core.strudel_interface import validate_date, StrudelInterface
+from analytics.visulisation import Visualisation
 from core.APPLE import APPLE
 from shutil import rmtree
 
@@ -65,6 +66,37 @@ def update_task_status(task_id: str, status_update: str, task_list: list) -> Non
     for a_task in task_list:
         if a_task["task_id"] == task_id:
             a_task["task_status"] = status_update
+
+
+def update_request_status(request_id: str, status_update: str, request_list: list) -> None:
+    """
+    Def to update status of API tasks
+    :param request_id: str
+            Request ID of the request to update
+    :param status_update: str
+            What to update the status to
+    :param request_list:
+            The list of requests that could be updated
+    :return: Nothing
+    """
+    for a_task in request_list:
+        if a_task["request_id"] == request_id:
+            a_task["request_status"] = status_update
+
+def add_to_request_status(request_id: str, key_to_add: str, value_to_add: str,request_list: list) -> None:
+    """
+    Def to update status of API tasks
+    :param request_id: str
+            Request ID of the request to update
+    :param status_update: str
+            What to update the status to
+    :param request_list:
+            The list of requests that could be updated
+    :return: Nothing
+    """
+    for a_task in request_list:
+        if a_task["request_id"] == request_id:
+            a_task[key_to_add] = value_to_add
 
 
 def rest_apple_interface(task: dict, task_list: list) -> None:
@@ -123,6 +155,7 @@ auth = HTTPBasicAuth()
 
 # list used to store all task dicts
 tasks = []
+vis_requests = []
 
 accepting_new_users = False
 
@@ -237,6 +270,15 @@ def not_found():
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
+@app.errorhandler(400)
+def not_found():
+    """
+    Return error message
+    :return: json
+    """
+    return make_response(jsonify({'error': 'Not found'}), 400)
+
+
 @app.route('/apple/api/v1.0/tasks', methods = ['GET'])
 @auth.login_required
 def get_tasks():
@@ -294,6 +336,125 @@ def get_task(task_id: str):
         abort(404)
         return jsonify({'task': task[0]})
     return jsonify({'task': task[0]})
+
+
+# --- Visualisation endpoints
+
+supported_vis_types = ["volatility", "time_series", "stratified_performance"]
+# this will need to be ported to a request to get data from STRUDEL
+aggregated_data_filepath = "data/aggregated_results/20_21/predictions_and_results_log.csv"
+
+
+@app.route('/analytics/api/v1.0/visualisations', methods = ['POST'])
+@auth.login_required
+def create_visualisations():
+    """"
+    Endpoint to create a visualisation
+    :return: json
+    """
+    # check if type is specified
+    if not request.json or 'type' not in request.json:
+        abort(400)
+    # check type passed
+    if request.json["type"] not in supported_vis_types:
+        abort(400)
+    # create task id
+    request_id = str(uuid.uuid4())
+    vis_request = {
+        "request_id": request_id,
+        "type": request.json["type"],
+        "request_status": "Submitted"
+    }
+    vis_requests.append(vis_request)
+    # creat a vis object here
+    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath)
+    if vis_request["type"] == "volatility":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = (visualizer, "volatility", request.json,))
+        visualisation_thread.start()
+    elif vis_request["type"] == "time_series":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = (visualizer, "time_series", request.json,))
+        visualisation_thread.start()
+    elif vis_request["type"] == "stratified_performance":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
+                                                args = (visualizer, "time_series", request.json,))
+        visualisation_thread.start()
+    else:
+        update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Error message",
+                              value_to_add = "Error in implementation of visualisation for visualisation type {}. Please see terminal for more information".format(vis_request["type"]),
+                              request_list = vis_requests)
+        return jsonify({'request': vis_request}), 201
+    # validate date formats
+    return jsonify({'request': vis_request}), 201
+
+
+@app.route('/analytics/api/v1.0/visualisations/all', methods = ['POST'])
+@auth.login_required
+def create_all_visualisations():
+    """"
+    Endpoint to create a all visualisations
+    :return: json
+    """
+    request_id = str(uuid.uuid4())
+    vis_request = {
+        "request_id": request_id,
+        "type": "all",
+        "request_status": "Submitted"
+    }
+    vis_requests.append(vis_request)
+    # create vis object
+    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath)
+    update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+    visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
+                                            args = (visualizer, "all", request.json,))
+    visualisation_thread.start()
+    return jsonify({'request': vis_request}), 201
+
+
+def generate_and_return_visualisation(vis_object: Visualisation, type: str,request_id: str ,full_request: request.json) -> None:
+    # temp data file
+    temp_dir = path + "/temporary_data/" + request_id
+    temp_dir = Path(temp_dir)
+    if type == "all":
+        plots_to_return_to_strudel = [temp_dir + "/volatility.html",
+                                      temp_dir + "/time_series.html",
+                                      temp_dir + "/stratified_performance_top_6_teams.html",
+                                      temp_dir + "/stratified_performance_newly_promoted_teams.html"]
+        vis_object.volatility(output_filepath = plots_to_return_to_strudel[0])
+        vis_object.time_series(output_filepath = plots_to_return_to_strudel[1])
+        vis_object.stratified_performance(metric = "top 6 teams",
+                                          output_filepath = plots_to_return_to_strudel[2])
+        vis_object.stratified_performance(metric = "newly promoted teams",
+                                          output_filepath = plots_to_return_to_strudel[3])
+
+    elif type == "volatility":
+        plots_to_return_to_strudel = [temp_dir + "/volatility.html"]
+        vis_object.volatility(output_filepath = plots_to_return_to_strudel[0])
+    elif type == "time_series":
+        plots_to_return_to_strudel = [temp_dir + "/time_series.html"]
+        vis_object.time_series(output_filepath = temp_dir + plots_to_return_to_strudel[0])
+    elif type == "stratified_performance":
+        mertic_formatted_for_output_str = full_request["metric"].replace(" ", "_")
+        plots_to_return_to_strudel = [temp_dir + "/stratified_performance_" + mertic_formatted_for_output_str + ".html"]
+        vis_object.stratified_performance(metric = full_request["metric"],
+                                          output_filepath = plots_to_return_to_strudel[0])
+    else:
+        update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Error Message", value_to_add = "Unexpected type of visualisation requested", request_list = vis_requests)
+        raise Exception("Unexpected Type")
+    update_request_status(request_id = request_id, status_update = "Uploading", request_list = vis_requests)
+    # use interface to upload
+    strudel_connection = StrudelInterface(credentials_filepath = path + '/credentials/credentials.json')
+    # figure out how to get title somehow
+    failures = [plot_title for plot in plots_to_return_to_strudel if not strudel_connection.return_visualisations(html_filepath = plot, visualisation_title = plot_title, notes = "dummy1, dummy2")]
+    if len(failures) >= 1:
+        update_request_status(request_id = request_id, status_update = "Partially Complete", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Plot(s) failed to load", value_to_add = ",".join(failures), request_list = vis_requests)
+    else:
+        update_request_status(request_id = request_id, status_update = "Complete", request_list = vis_requests)
 
 
 if __name__ == '__main__':
