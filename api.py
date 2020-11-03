@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import time
 import os
+from os.path import basename as get_plot_title, splitext
 import uuid
 from pathlib import Path
 import threading
@@ -82,6 +83,7 @@ def update_request_status(request_id: str, status_update: str, request_list: lis
     for a_task in request_list:
         if a_task["request_id"] == request_id:
             a_task["request_status"] = status_update
+
 
 def add_to_request_status(request_id: str, key_to_add: str, value_to_add: str,request_list: list) -> None:
     """
@@ -367,19 +369,18 @@ def create_visualisations():
     }
     vis_requests.append(vis_request)
     # creat a vis object here
-    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath)
     if vis_request["type"] == "volatility":
         update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
-        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = (visualizer, "volatility", request.json,))
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = ("volatility", request_id,request.json,))
         visualisation_thread.start()
     elif vis_request["type"] == "time_series":
         update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
-        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = (visualizer, "time_series", request.json,))
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = ("time_series", request_id,request.json,))
         visualisation_thread.start()
     elif vis_request["type"] == "stratified_performance":
         update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
         visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
-                                                args = (visualizer, "time_series", request.json,))
+                                                args = ("time_series", request_id,request.json,))
         visualisation_thread.start()
     else:
         update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
@@ -406,40 +407,64 @@ def create_all_visualisations():
     }
     vis_requests.append(vis_request)
     # create vis object
-    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath)
     update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
     visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
-                                            args = (visualizer, "all", request.json,))
+                                            args = ("all", request_id, vis_request,))
     visualisation_thread.start()
     return jsonify({'request': vis_request}), 201
 
 
-def generate_and_return_visualisation(vis_object: Visualisation, type: str,request_id: str ,full_request: request.json) -> None:
+@app.route('/analytics/api/v1.0/visualisations', methods = ['GET'])
+@auth.login_required
+def get_all_requests():
+    """
+    Return all vis requests as json
+    :return:
+    """
+    return jsonify({'tasks': vis_requests})
+
+
+@app.route('/apple/api/v1.0/temporarydata', methods = ['DELETE'])
+@auth.login_required
+def delete_temporary_data():
+    """"
+    Endpoint to create a all visualisations
+    :return: json
+    """
+    temp_dir = path + "/temporary_data/"
+    rmtree(temp_dir)
+    return jsonify({'Temporary Data Dir': "deleted"}), 201
+
+
+def generate_and_return_visualisation(vis_type: str, request_id: str, full_request) -> None:
+    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath, show_visualisations = False)
     # temp data file
-    temp_dir = path + "/temporary_data/" + request_id
-    temp_dir = Path(temp_dir)
-    if type == "all":
-        plots_to_return_to_strudel = [temp_dir + "/volatility.html",
-                                      temp_dir + "/time_series.html",
-                                      temp_dir + "/stratified_performance_top_6_teams.html",
-                                      temp_dir + "/stratified_performance_newly_promoted_teams.html"]
-        vis_object.volatility(output_filepath = plots_to_return_to_strudel[0])
-        vis_object.time_series(output_filepath = plots_to_return_to_strudel[1])
-        vis_object.stratified_performance(metric = "top 6 teams",
+    temp_dir_str = path + "/temporary_data/" + request_id
+    temp_dir = Path(temp_dir_str)
+    if not temp_dir.exists():
+        temp_dir.mkdir(parents = True)
+    if vis_type == "all":
+        plots_to_return_to_strudel = [temp_dir_str + "/volatility.html",
+                                      temp_dir_str + "/time_series.html",
+                                      temp_dir_str + "/stratified_performance_top_6_teams.html",
+                                      temp_dir_str + "/stratified_performance_newly_promoted_teams.html"]
+        visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
+        visualizer.time_series(output_filepath = plots_to_return_to_strudel[1])
+        visualizer.stratified_performance(metric = "top 6 teams",
                                           output_filepath = plots_to_return_to_strudel[2])
-        vis_object.stratified_performance(metric = "newly promoted teams",
+        visualizer.stratified_performance(metric = "newly promoted teams",
                                           output_filepath = plots_to_return_to_strudel[3])
 
-    elif type == "volatility":
-        plots_to_return_to_strudel = [temp_dir + "/volatility.html"]
-        vis_object.volatility(output_filepath = plots_to_return_to_strudel[0])
-    elif type == "time_series":
-        plots_to_return_to_strudel = [temp_dir + "/time_series.html"]
-        vis_object.time_series(output_filepath = temp_dir + plots_to_return_to_strudel[0])
-    elif type == "stratified_performance":
+    elif vis_type == "volatility":
+        plots_to_return_to_strudel = [temp_dir_str + "/volatility.html"]
+        visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
+    elif vis_type == "time_series":
+        plots_to_return_to_strudel = [temp_dir_str + "/time_series.html"]
+        visualizer.time_series(output_filepath = temp_dir + plots_to_return_to_strudel[0])
+    elif vis_type == "stratified_performance":
         mertic_formatted_for_output_str = full_request["metric"].replace(" ", "_")
-        plots_to_return_to_strudel = [temp_dir + "/stratified_performance_" + mertic_formatted_for_output_str + ".html"]
-        vis_object.stratified_performance(metric = full_request["metric"],
+        plots_to_return_to_strudel = [temp_dir_str + "/stratified_performance_" + mertic_formatted_for_output_str + ".html"]
+        visualizer.stratified_performance(metric = full_request["metric"],
                                           output_filepath = plots_to_return_to_strudel[0])
     else:
         update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
@@ -448,12 +473,13 @@ def generate_and_return_visualisation(vis_object: Visualisation, type: str,reque
     update_request_status(request_id = request_id, status_update = "Uploading", request_list = vis_requests)
     # use interface to upload
     strudel_connection = StrudelInterface(credentials_filepath = path + '/credentials/credentials.json')
-    # figure out how to get title somehow
-    failures = [plot_title for plot in plots_to_return_to_strudel if not strudel_connection.return_visualisations(html_filepath = plot, visualisation_title = plot_title, notes = "dummy1, dummy2")]
+    # make list of failures if any
+    failures = [splitext(get_plot_title(plot))[0] for plot in plots_to_return_to_strudel if not strudel_connection.return_visualisations(html_filepath = plot, visualisation_title = splitext(get_plot_title(plot))[0], notes = "dummy1, dummy2", request_id = request_id)]
     if len(failures) >= 1:
         update_request_status(request_id = request_id, status_update = "Partially Complete", request_list = vis_requests)
         add_to_request_status(request_id = request_id, key_to_add = "Plot(s) failed to load", value_to_add = ",".join(failures), request_list = vis_requests)
     else:
+        rmtree(temp_dir)
         update_request_status(request_id = request_id, status_update = "Complete", request_list = vis_requests)
 
 

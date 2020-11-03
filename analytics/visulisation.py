@@ -7,7 +7,7 @@ from IPython.display import display
 
 class Visualisation(object):
 
-    def __init__(self, use_strudel: bool = False, aggregated_data_filepath: str = None):
+    def __init__(self,show_visualisations: bool,use_strudel: bool = False, aggregated_data_filepath: str = None):
         """
         :param use_strudel: bool
                 Default: False
@@ -16,6 +16,7 @@ class Visualisation(object):
                 Optional - Required if use_strudel is False
                 filepath of aggregated results file to update
         """
+        self.show_visualisations = show_visualisations
         if use_strudel:
             # Need to add somehting here using the STRUDEL interface to get up to date aggreagted results.
             # once got from strudel save locally
@@ -62,9 +63,10 @@ class Visualisation(object):
                                template = "simple_white")
         # set range of axes
         fig_violin.update_yaxes(range = [0, 100])
-        fig_violin.show()
+        if self.show_visualisations:
+            fig_violin.show()
         if output_filepath:
-            fig_violin.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)
+            fig_violin.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
 
     def time_series(self, output_filepath: str = None) -> None:
         fig_ts = px.line(self.weekly_summed,
@@ -72,17 +74,18 @@ class Visualisation(object):
                          y = "Accuracy of Predictions (%)",
                          color = "Predictor",
                          hover_name = "Predictor")
-        fig_ts.show()
+        if self.show_visualisations:
+            fig_ts.show()
         if output_filepath:
-            fig_ts.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)
+            fig_ts.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
 
     def stratified_performance(self, metric: str, output_filepath: str = None) -> None:
         """
         :param metric: str
                 "top 6 teams" or  "newly promoted teams"
-        :param output_filepath: str OPTIONAL
-                if the output is required to be saved as an HTML file the output filepath
-                can be specified
+        :param output_filepath: str
+                OPTIONAL - only required if output to be saved as HTML file
+                Absolute filepath that output will be saved to.
         :return: nothing
         """
         if metric == "top 6 teams":
@@ -101,6 +104,7 @@ class Visualisation(object):
                               theta = "Predictor",
                               color = "Predictor",
                               template = "simple_white")
-        fig_sp.show()
+        if self.show_visualisations:
+            fig_sp.show()
         if output_filepath:
-            fig_sp.write_html(self.path + "/" + output_filepath, include_plotlyjs= "cdn", full_html = False)
+            fig_sp.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)

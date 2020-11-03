@@ -169,7 +169,7 @@ class StrudelInterface(object):
         if response.status_code == 200:
             print(colored("APPLE prediction for fixture with id {} exported to Strudel".format(prediction_details["fixture"]), "green"))
 
-    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str) -> bool:
+    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str, request_id: str) -> bool:
         """
         Def to upload plotly html visualisations to STRUDEL where they are displayed
         :param html_filepath: str
@@ -185,20 +185,20 @@ class StrudelInterface(object):
         html_file = codecs.open(html_filepath, 'r')
         html_contents = html_file.read()
         today = datetime.today().strftime("%Y_%m_%d")
-        visualisation_name = visualisation_title + "_" + today
+        visualisation_heading = visualisation_title
+        visualisation_title = visualisation_title + "_" + today + "_" + request_id
         body = {
-            "name": visualisation_name,
-            "heading": visualisation_title,
+            "name": visualisation_title,
+            "heading": visualisation_heading,
             "html": html_contents,
             "tagLineList": notes
         }
         response = requests.put(end_point, headers = self._token_header, json = body)
         if response.status_code == 200:
-            print(colored("Visualisation with title {} successfully uploaded ".format(visualisation_title), "green"))
+            print(colored("Visualisation with title '{}' successfully uploaded ".format(visualisation_title), "green"))
             return True
         else:
-            print(colored("Visualisation with title {} failed to upload ".format(visualisation_title), "red"))
+            print(colored("Visualisation with title '{}' failed to upload ".format(visualisation_title), "red"))
             print(response.status_code)
             print(response.content)
             return False
-
