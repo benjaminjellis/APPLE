@@ -15,12 +15,12 @@ import codecs
 path = str(Path().absolute().parent)
 
 
-def validate_date(date: str):
+def validate_date(date: str) -> None:
     """
     Def used to validate that passed date is in ISO format (YYYY-MM-DD), if not ValueError raised
     :param date: str
             Date to validate
-    :return: nothing
+    :return: nothing if date is correct, raises an error if date is wrong
     """
     try:
         datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -29,7 +29,7 @@ def validate_date(date: str):
 
 
 def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, output_loc: str, include_predictions: bool,
-                                authentication: dict):
+                                authentication: dict) -> None:
     """
     Def to query STRUDEL fixtures endpoint and return fixtures with or without user predictions for specified date range
     :param include_predictions: bool
@@ -123,7 +123,7 @@ class StrudelInterface(object):
         else:
             raise ValueError("Incorrect Log in details, log in unsuccessful")
 
-    def get_fixtures_and_user_predictions(self, start_date: str, end_date: str, week: int, output_loc: str):
+    def get_fixtures_and_user_predictions(self, start_date: str, end_date: str, week: int, output_loc: str) -> None:
         """
         Method to get the fixtures and predictions from the STRUDEL endpoint for specified date range
         :param output_loc: str
@@ -143,7 +143,7 @@ class StrudelInterface(object):
                                     include_predictions = True,
                                     authentication = self._token_header)
 
-    def get_fixtures(self, start_date: str, end_date: str, week: int, output_loc: str):
+    def get_fixtures(self, start_date: str, end_date: str, week: int, output_loc: str) -> None:
         """
         Method to get the fixtures from the STRUDEL endpoint for specified date range
         :param output_loc: str
@@ -163,48 +163,56 @@ class StrudelInterface(object):
                                     include_predictions = False,
                                     authentication = self._token_header)
 
-    def return_predictions(self, prediction_details: dict):
+    def return_predictions(self, prediction_details: dict) -> None:
+        """
+        Def to upload APPLE predictions to STRUDEL
+        :param prediction_details: dict
+                Details of each prediction to return
+        :return: nothing
+        """
         end_point = "https://beatthebot.co.uk/iapi/predictions"
         response = requests.put(end_point, headers = self._token_header, json = prediction_details)
         if response.status_code == 200:
             print(colored("APPLE prediction for fixture with id {} exported to Strudel".format(prediction_details["fixture"]), "green"))
+        else:
+            print(colored("APPLE prediction for fixture with id {} failed to export to Strudel".format(prediction_details["fixture"]), "green"))
+            print(response.status_code)
+            print(response.content)
 
-    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str) -> None:
+
+    def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str, request_id: str) -> bool:
         """
         Def to upload plotly html visualisations to STRUDEL where they are displayed
+        :param request_id: str
+                ID of the request
         :param html_filepath: str
                 filepath for the HTML file to upload
         :param visualisation_title: str
                 title of the visualisation to upload
         :param notes: str
                 comma separated list of notes to display along with the plot on STRUDEL
-        :return:
+        :return: bool
+                Returns True if upload is successful, False if not
         """
         end_point = "https://beatthebot.co.uk/iapi/analytics"
         # read in html file as a string
         html_file = codecs.open(html_filepath, 'r')
         html_contents = html_file.read()
         today = datetime.today().strftime("%Y_%m_%d")
-        visualisation_name = visualisation_title + "_" + today
+        visualisation_heading = visualisation_title
+        visualisation_title = visualisation_title + "_" + today + "_" + request_id
         body = {
-            "name": visualisation_name,
-            "heading": visualisation_title,
+            "name": visualisation_title,
+            "heading": visualisation_heading,
             "html": html_contents,
             "tagLineList": notes
         }
-        """
-        html_contents = html_contents.replace("<html>", "")
-        html_contents = html_contents.replace("</html>", "")
-        html_contents = html_contents.replace('head><meta charset="utf-8" /></head>', "")
-        html_contents = html_contents.replace("<body>", "")
-        html_contents = html_contents.replace("</body>", "")
-        print(html_contents)
-        """
         response = requests.put(end_point, headers = self._token_header, json = body)
         if response.status_code == 200:
-            print(colored("Visualisation with title {} successfully uploaded ".format(visualisation_title), "green"))
+            print(colored("Visualisation with title '{}' successfully uploaded ".format(visualisation_title), "green"))
+            return True
         else:
-            print(colored("Visualisation with title {} failed to upload ".format(visualisation_title), "red"))
+            print(colored("Visualisation with title '{}' failed to upload ".format(visualisation_title), "red"))
             print(response.status_code)
             print(response.content)
-
+            return False

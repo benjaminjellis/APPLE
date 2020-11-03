@@ -9,11 +9,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import time
 import os
+import json
+from os.path import basename as get_plot_title, splitext
 import uuid
 from pathlib import Path
 import threading
 from pandas import DataFrame
 from core.strudel_interface import validate_date, StrudelInterface
+from analytics.visulisation import Visualisation
 from core.APPLE import APPLE
 from shutil import rmtree
 
@@ -65,6 +68,40 @@ def update_task_status(task_id: str, status_update: str, task_list: list) -> Non
     for a_task in task_list:
         if a_task["task_id"] == task_id:
             a_task["task_status"] = status_update
+
+
+def update_request_status(request_id: str, status_update: str, request_list: list) -> None:
+    """
+    Def to update status of API tasks
+    :param request_id: str
+            Request ID of the request to update
+    :param status_update: str
+            What to update the status to
+    :param request_list:
+            The list of requests that could be updated
+    :return: Nothing
+    """
+    for a_task in request_list:
+        if a_task["request_id"] == request_id:
+            a_task["request_status"] = status_update
+
+
+def add_to_request_status(request_id: str, key_to_add: str, value_to_add: str,request_list: list) -> None:
+    """
+    Def to update status of API tasks
+    :param value_to_add: str
+            Value to add to request json for key_to_add
+    :param key_to_add: str
+            Key to add to the request json
+    :param request_id: str
+            Request ID of the request to update
+    :param request_list:
+            The list of requests that could be updated
+    :return: Nothing
+    """
+    for a_task in request_list:
+        if a_task["request_id"] == request_id:
+            a_task[key_to_add] = value_to_add
 
 
 def rest_apple_interface(task: dict, task_list: list) -> None:
@@ -123,10 +160,12 @@ auth = HTTPBasicAuth()
 
 # list used to store all task dicts
 tasks = []
+vis_requests = []
 
 accepting_new_users = False
 
 
+# class for user administration
 class User(db.Model):
     _tablename_ = "users"
     id = db.Column(db.Integer, primary_key = True)
@@ -137,24 +176,26 @@ class User(db.Model):
         """
         Def to hash passed password
         :param password: str
-                password (plain text)
+                password to hash (plain text)
         :return: Nothing
         """
         self.password_hash = generate_password_hash(password)
 
-    def verify_password(self, password: str) -> None:
+    def verify_password(self, password: str) -> bool:
         """
         Def to verify password hash
         :param password: str
                 password (plain text)
-        :return: Nothing
+        :return: bool
+                True if password when hashed is equal to the passed hash
         """
         return check_password_hash(self.password_hash, password)
 
-    def generate_auth_token(self, token_validity_length: int = 600):
+    def generate_auth_token(self, token_validity_length: int = 600) -> json:
         """
         Def to generate auth token
-        :param token_validity_length:
+        :param token_validity_length: int
+                Length of time, in seconds, that generated token is valid for
         :return: json
         """
         return jwt.encode(
@@ -195,7 +236,7 @@ def verify_password(username_or_token: str, password: str) -> bool:
 
 
 @app.route('/apple/api/v1.0/newuser', methods=['POST'])
-def new_user():
+def new_user() -> json:
     """
     Endpoint to create new user
     :return: json
@@ -225,7 +266,7 @@ def get_auth_token():
     :return: json
     """
     token = g.user.generate_auth_token(600)
-    return jsonify({'token': token.decode('ascii'), 'duration': 600})
+    return make_response(jsonify({'token': token.decode('ascii'), 'duration': 600}))
 
 
 @app.errorhandler(404)
@@ -237,6 +278,15 @@ def not_found():
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
+@app.errorhandler(400)
+def not_found():
+    """
+    Return error message
+    :return: json
+    """
+    return make_response(jsonify({'error': 'Not found'}), 400)
+
+
 @app.route('/apple/api/v1.0/tasks', methods = ['GET'])
 @auth.login_required
 def get_tasks():
@@ -244,7 +294,7 @@ def get_tasks():
     Endpoint to return all tasks
     :return: json
     """
-    return jsonify({'tasks': tasks})
+    return make_response(jsonify({'tasks': tasks}))
 
 
 @app.route('/apple/api/v1.0/tasks', methods = ['POST'])
@@ -294,6 +344,158 @@ def get_task(task_id: str):
         abort(404)
         return jsonify({'task': task[0]})
     return jsonify({'task': task[0]})
+
+
+# --- Visualisation endpoints
+
+supported_vis_types = ["volatility", "time_series", "stratified_performance"]
+# this will need to be ported to a request to get data from STRUDEL
+aggregated_data_filepath = "data/aggregated_results/20_21/predictions_and_results_log.csv"
+
+
+@app.route('/analytics/api/v1.0/visualisations', methods = ['POST'])
+@auth.login_required
+def create_visualisations():
+    """"
+    Endpoint to create a visualisation
+    :return: json
+    """
+    # check if type is specified
+    if not request.json or 'type' not in request.json:
+        abort(400)
+    # check type passed
+    if request.json["type"] not in supported_vis_types:
+        abort(400)
+    # create task id
+    request_id = str(uuid.uuid4())
+    vis_request = {
+        "request_id": request_id,
+        "type": request.json["type"],
+        "request_status": "Submitted"
+    }
+    vis_requests.append(vis_request)
+    # creat a vis object here
+    if vis_request["type"] == "volatility":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = ("volatility", request_id,request.json,))
+        visualisation_thread.start()
+    elif vis_request["type"] == "time_series":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation, args = ("time_series", request_id,request.json,))
+        visualisation_thread.start()
+    elif vis_request["type"] == "stratified_performance":
+        update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+        visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
+                                                args = ("time_series", request_id,request.json,))
+        visualisation_thread.start()
+    else:
+        update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Error message",
+                              value_to_add = "Error in implementation of visualisation for visualisation type {}. Please see terminal for more information".format(vis_request["type"]),
+                              request_list = vis_requests)
+        return jsonify({'request': vis_request}), 201
+    return jsonify({'request': vis_request}), 201
+
+
+@app.route('/analytics/api/v1.0/visualisations/all', methods = ['POST'])
+@auth.login_required
+def create_all_visualisations():
+    """"
+    Endpoint to create a all visualisations
+    :return: json
+    """
+    request_id = str(uuid.uuid4())
+    vis_request = {
+        "request_id": request_id,
+        "type": "all",
+        "request_status": "Submitted"
+    }
+    vis_requests.append(vis_request)
+    # create vis object
+    update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
+    visualisation_thread = threading.Thread(target = generate_and_return_visualisation,
+                                            args = ("all", request_id, vis_request,))
+    visualisation_thread.start()
+    return jsonify({'request': vis_request}), 201
+
+
+@app.route('/analytics/api/v1.0/visualisations', methods = ['GET'])
+@auth.login_required
+def get_all_requests():
+    """
+    Return all vis requests as json
+    :return:
+    """
+    return jsonify({'tasks': vis_requests})
+
+
+@app.route('/apple/api/v1.0/temporarydata', methods = ['DELETE'])
+@auth.login_required
+def delete_temporary_data():
+    """"
+    Endpoint to create a all visualisations
+    :return: json
+    """
+    temp_dir = path + "/temporary_data/"
+    rmtree(temp_dir)
+    return jsonify({'Temporary Data Dir': "deleted"}), 201
+
+
+def generate_and_return_visualisation(vis_type: str, request_id: str, full_request: dict) -> None:
+    """
+    Def to generate visualisations and return them to STRUDEL
+    :param vis_type: str
+            Type of visualisations to generate
+    :param request_id: str
+            Request id
+    :param full_request: dict
+    
+    :return: nothing
+    """
+    visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath, show_visualisations = False)
+    # temp data file
+    temp_dir_str = path + "/temporary_data/" + request_id
+    temp_dir = Path(temp_dir_str)
+    if not temp_dir.exists():
+        temp_dir.mkdir(parents = True)
+    if vis_type == "all":
+        plots_to_return_to_strudel = [temp_dir_str + "/volatility.html",
+                                      temp_dir_str + "/time_series.html",
+                                      temp_dir_str + "/stratified_performance_top_6_teams.html",
+                                      temp_dir_str + "/stratified_performance_newly_promoted_teams.html"]
+        visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
+        visualizer.time_series(output_filepath = plots_to_return_to_strudel[1])
+        visualizer.stratified_performance(metric = "top 6 teams",
+                                          output_filepath = plots_to_return_to_strudel[2])
+        visualizer.stratified_performance(metric = "newly promoted teams",
+                                          output_filepath = plots_to_return_to_strudel[3])
+
+    elif vis_type == "volatility":
+        plots_to_return_to_strudel = [temp_dir_str + "/volatility.html"]
+        visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
+    elif vis_type == "time_series":
+        plots_to_return_to_strudel = [temp_dir_str + "/time_series.html"]
+        visualizer.time_series(output_filepath = temp_dir + plots_to_return_to_strudel[0])
+    elif vis_type == "stratified_performance":
+        mertic_formatted_for_output_str = full_request["metric"].replace(" ", "_")
+        plots_to_return_to_strudel = [temp_dir_str + "/stratified_performance_" + mertic_formatted_for_output_str + ".html"]
+        visualizer.stratified_performance(metric = full_request["metric"],
+                                          output_filepath = plots_to_return_to_strudel[0])
+    else:
+        update_request_status(request_id = request_id, status_update = "Error", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Error Message", value_to_add = "Unexpected type of visualisation requested", request_list = vis_requests)
+        raise Exception("Unexpected Type")
+    update_request_status(request_id = request_id, status_update = "Uploading", request_list = vis_requests)
+    # use interface to upload
+    strudel_connection = StrudelInterface(credentials_filepath = path + '/credentials/credentials.json')
+    # make list of failures if any
+    failures = [splitext(get_plot_title(plot))[0] for plot in plots_to_return_to_strudel if not strudel_connection.return_visualisations(html_filepath = plot, visualisation_title = splitext(get_plot_title(plot))[0], notes = "dummy1, dummy2", request_id = request_id)]
+    if len(failures) >= 1:
+        update_request_status(request_id = request_id, status_update = "Partially Complete", request_list = vis_requests)
+        add_to_request_status(request_id = request_id, key_to_add = "Plot(s) failed to load", value_to_add = ",".join(failures), request_list = vis_requests)
+    else:
+        rmtree(temp_dir)
+        update_request_status(request_id = request_id, status_update = "Complete", request_list = vis_requests)
 
 
 if __name__ == '__main__':
