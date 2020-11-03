@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import time
 import os
+import json
 from os.path import basename as get_plot_title, splitext
 import uuid
 from pathlib import Path
@@ -88,10 +89,12 @@ def update_request_status(request_id: str, status_update: str, request_list: lis
 def add_to_request_status(request_id: str, key_to_add: str, value_to_add: str,request_list: list) -> None:
     """
     Def to update status of API tasks
+    :param value_to_add: str
+            Value to add to request json for key_to_add
+    :param key_to_add: str
+            Key to add to the request json
     :param request_id: str
             Request ID of the request to update
-    :param status_update: str
-            What to update the status to
     :param request_list:
             The list of requests that could be updated
     :return: Nothing
@@ -162,6 +165,7 @@ vis_requests = []
 accepting_new_users = False
 
 
+# class for user administration
 class User(db.Model):
     _tablename_ = "users"
     id = db.Column(db.Integer, primary_key = True)
@@ -172,24 +176,26 @@ class User(db.Model):
         """
         Def to hash passed password
         :param password: str
-                password (plain text)
+                password to hash (plain text)
         :return: Nothing
         """
         self.password_hash = generate_password_hash(password)
 
-    def verify_password(self, password: str) -> None:
+    def verify_password(self, password: str) -> bool:
         """
         Def to verify password hash
         :param password: str
                 password (plain text)
-        :return: Nothing
+        :return: bool
+                True if password when hashed is equal to the passed hash
         """
         return check_password_hash(self.password_hash, password)
 
-    def generate_auth_token(self, token_validity_length: int = 600):
+    def generate_auth_token(self, token_validity_length: int = 600) -> json:
         """
         Def to generate auth token
-        :param token_validity_length:
+        :param token_validity_length: int
+                Length of time, in seconds, that generated token is valid for
         :return: json
         """
         return jwt.encode(
@@ -230,7 +236,7 @@ def verify_password(username_or_token: str, password: str) -> bool:
 
 
 @app.route('/apple/api/v1.0/newuser', methods=['POST'])
-def new_user():
+def new_user() -> json:
     """
     Endpoint to create new user
     :return: json
@@ -260,7 +266,7 @@ def get_auth_token():
     :return: json
     """
     token = g.user.generate_auth_token(600)
-    return jsonify({'token': token.decode('ascii'), 'duration': 600})
+    return make_response(jsonify({'token': token.decode('ascii'), 'duration': 600}))
 
 
 @app.errorhandler(404)
@@ -288,7 +294,7 @@ def get_tasks():
     Endpoint to return all tasks
     :return: json
     """
-    return jsonify({'tasks': tasks})
+    return make_response(jsonify({'tasks': tasks}))
 
 
 @app.route('/apple/api/v1.0/tasks', methods = ['POST'])
@@ -388,7 +394,6 @@ def create_visualisations():
                               value_to_add = "Error in implementation of visualisation for visualisation type {}. Please see terminal for more information".format(vis_request["type"]),
                               request_list = vis_requests)
         return jsonify({'request': vis_request}), 201
-    # validate date formats
     return jsonify({'request': vis_request}), 201
 
 
@@ -436,7 +441,17 @@ def delete_temporary_data():
     return jsonify({'Temporary Data Dir': "deleted"}), 201
 
 
-def generate_and_return_visualisation(vis_type: str, request_id: str, full_request) -> None:
+def generate_and_return_visualisation(vis_type: str, request_id: str, full_request: dict) -> None:
+    """
+    Def to generate visualisations and return them to STRUDEL
+    :param vis_type: str
+            Type of visualisations to generate
+    :param request_id: str
+            Request id
+    :param full_request: dict
+    
+    :return: nothing
+    """
     visualizer = Visualisation(aggregated_data_filepath = aggregated_data_filepath, show_visualisations = False)
     # temp data file
     temp_dir_str = path + "/temporary_data/" + request_id
