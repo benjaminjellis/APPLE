@@ -224,6 +224,16 @@ class StrudelInterface(object):
             return False
 
     def get_predictions_and_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
+        """
+        Def to get predictions and full timne results of completed fixtures
+        :param start_date: str
+                Date, format YYYY-MM-DD, for the start date of fixtures window
+        :param end_date: str
+                Date, format YYYY-MM-DD, for the end date of fixtures window
+        :param output_loc: str
+                output location
+        :return:
+        """
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,
@@ -233,6 +243,16 @@ class StrudelInterface(object):
                                     authentication = self._token_header)
 
     def get_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
+        """
+        Def to get full-timne results of completed fixtures
+        :param start_date: str
+                Date, format YYYY-MM-DD, for the start date of fixtures window
+        :param end_date: str
+                Date, format YYYY-MM-DD, for the end date of fixtures window
+        :param output_loc: str
+                output location
+        :return:
+        """
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,

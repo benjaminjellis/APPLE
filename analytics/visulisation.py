@@ -23,7 +23,6 @@ class Visualisation(object):
         self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_data_filepath)
         # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
-        self.weekly_summed.to_csv(self.path + "/weekly_summed.csv")
         self.total_summed = None
 
     def predictor_team_history(self, predictor: str, team: str) -> None:
@@ -65,6 +64,13 @@ class Visualisation(object):
             fig_violin.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
 
     def time_series(self, output_filepath: str = None) -> None:
+        """
+        Time series plot of accuracy of each predictor for each week
+        :param output_filepath: str
+                OPTIONAL - only required if output to be saved as HTML file
+                Absolute filepath that output will be saved to.
+        :return: nothing
+        """
         fig_ts = px.line(self.weekly_summed,
                          x = "Week",
                          y = "Accuracy of Predictions (%)",
@@ -105,7 +111,14 @@ class Visualisation(object):
         if output_filepath:
             fig_sp.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
 
-    def weekly_winner(self, output_filepath: str = None):
+    def weekly_winner(self, output_filepath: str = None) -> None:
+        """
+        Table showing results from the latest week
+        :param output_filepath: str
+                OPTIONAL - only required if output to be saved as HTML file
+                Absolute filepath that output will be saved to.
+        :return: nothing
+        """
         weeks = self.weekly_summed["Week"].to_list()
         weeks = list(set(weeks))
         this_week = max(weeks)
@@ -126,7 +139,14 @@ class Visualisation(object):
         if output_filepath:
             fig.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
 
-    def total_winner(self, output_filepath: str = None):
+    def total_winner(self, output_filepath: str = None) -> None:
+        """
+        Table showing total results
+        :param output_filepath: str
+                OPTIONAL - only required if output to be saved as HTML file
+                Absolute filepath that output will be saved to.
+        :return: nothing
+        """
         self.total_summed = calculate_accuracy_transform(self.aggregated_results, mode = "overall")
         self.total_summed = self.total_summed.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
         decimals = 1
