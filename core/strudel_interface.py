@@ -32,7 +32,8 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
                                 authentication: dict, include_ftrs: bool, week: int = None) -> None:
     """
     Def to query STRUDEL fixtures endpoint and return fixtures with or without user predictions for specified date range
-    :param include_ftrs:
+    :param include_ftrs: bool
+            whether to include full time results 
     :param include_predictions: bool
             whether to include user predictions
     :param authentication: dict[str]
@@ -55,7 +56,7 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
     # defined endpoint
     end_point = "https://beatthebot.co.uk/iapi/fixtures/bydate?startDate=" + start_date + "&endDate=" + end_date + "&format=csv"
     # send GET request
-    print(colored("Requesting days for fixtures between {} and {}".format(start_date, end_date), "red"))
+    print(colored("Requesting data for fixtures between {} and {}".format(start_date, end_date), "red"))
     response = requests.get(end_point, headers = authentication)
     # check response
     if response.status_code == 200:
