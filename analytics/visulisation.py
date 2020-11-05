@@ -1,34 +1,30 @@
 from pathlib import Path
+import pandas as pd
 import plotly.express as px
-from analytics.results import calculate_accuracy_transform
+import plotly.graph_objects as go
+from analytics.transforms import calculate_accuracy_transform, winners_from_dataframe
 from core.loaders import load_json_or_csv
 from IPython.display import display
+
+pd.options.mode.chained_assignment = None
 
 
 class Visualisation(object):
 
-    def __init__(self,show_visualisations: bool,use_strudel: bool = False, aggregated_data_filepath: str = None):
+    def __init__(self, show_visualisations: bool, aggregated_data_filepath: str):
         """
-        :param use_strudel: bool
-                Default: False
-                Whether to get aggregated results from STRUDEL or to use a local file
         :param aggregated_data_filepath: str
-                Optional - Required if use_strudel is False
                 filepath of aggregated results file to update
         """
         self.show_visualisations = show_visualisations
-        if use_strudel:
-            # Need to add somehting here using the STRUDEL interface to get up to date aggreagted results.
-            # once got from strudel save locally
-            # load then use calculate_accuracy_transform
-            raise ValueError("Visualisation class does not yet support use of STRUDEl")
-        else:
-            # define path
-            self.path = str(Path().absolute())
-            # user loader to load aggregated results file
-            self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_data_filepath)
-            # use calculate_accuracy_transform def to create the weekly summed
+        # define path
+        self.path = str(Path().absolute())
+        # user loader to load aggregated results file
+        self.aggregated_results = load_json_or_csv(self.path + "/" + aggregated_data_filepath)
+        # use calculate_accuracy_transform def to create the weekly summed
         self.weekly_summed = calculate_accuracy_transform(self.aggregated_results, mode = "weekly")
+        self.weekly_summed.to_csv(self.path + "/weekly_summed.csv")
+        self.total_summed = None
 
     def predictor_team_history(self, predictor: str, team: str) -> None:
         """
@@ -108,3 +104,43 @@ class Visualisation(object):
             fig_sp.show()
         if output_filepath:
             fig_sp.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
+
+    def weekly_winner(self, output_filepath: str = None):
+        weeks = self.weekly_summed["Week"].to_list()
+        weeks = list(set(weeks))
+        this_week = max(weeks)
+        this_week_summed = self.weekly_summed[self.weekly_summed["Week"] == this_week]
+        decimals = 1
+        this_week_summed["Accuracy of Predictions (%)"] = this_week_summed["Accuracy of Predictions (%)"].apply(
+            lambda x: round(x, decimals))
+        this_week_summed = this_week_summed.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
+        fig = go.Figure(data = [go.Table(
+            header = dict(values = list(this_week_summed.columns),
+                          align = 'left'),
+            cells = dict(values = [this_week_summed["Predictor"], this_week_summed["Week"], this_week_summed["Correct Predictions"], this_week_summed["Accuracy of Predictions (%)"]],
+                         align = 'left'))
+        ])
+        winner = winners_from_dataframe(this_week_summed, find_max_of = "Accuracy of Predictions (%)", get_winners_from = "Predictor")
+        if self.show_visualisations:
+            fig.show()
+        if output_filepath:
+            fig.write_html(output_filepath, include_plotlyjs= "cdn", full_html = False)
+
+    def total_winner(self, output_filepath: str = None):
+        self.total_summed = calculate_accuracy_transform(self.aggregated_results, mode = "overall")
+        self.total_summed = self.total_summed.sort_values(by = "Accuracy of Predictions (%)", ascending = False)
+        decimals = 1
+        self.total_summed["Accuracy of Predictions (%)"] = self.total_summed["Accuracy of Predictions (%)"].apply(lambda x: round(x, decimals))
+        fig = go.Figure(data = [go.Table(
+            header = dict(values = list(self.total_summed.columns),
+                          align = 'left'),
+            cells = dict(values = [self.total_summed["Predictor"],
+                                   self.total_summed["Correct Predictions"],
+                                   self.total_summed["Accuracy of Predictions (%)"]],
+                         align = 'left'))
+        ])
+        winner = winners_from_dataframe(self.total_summed, find_max_of = "Accuracy of Predictions (%)", get_winners_from = "Predictor")
+        if self.show_visualisations:
+            fig.show()
+        if output_filepath:
+            fig.write_html(output_filepath, include_plotlyjs = "cdn", full_html = False)

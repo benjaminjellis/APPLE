@@ -54,7 +54,6 @@ class APPLE(object):
                 strudel_connection = StrudelInterface(credentials_filepath = self.path + '/credentials/credentials.json')
                 strudel_connection.get_fixtures_and_user_predictions(start_date = start_date,
                                                                      end_date = end_date,
-                                                                     week = week,
                                                                      output_loc = fixtures_to_predict)
 
         # load in the fixtures to predict, these are also user predictions
@@ -76,7 +75,9 @@ class APPLE(object):
         fixtures_to_predict["AwayTeam"] = fixtures_to_predict.apply(lambda x: team_name_standardisation(x["AwayTeam"]),
                                                                     axis = 1)
         # merge the fixtures and data
-        self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge, how = "outer", on = ["HomeTeam", "AwayTeam"])
+        self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge,
+                                                                          how = "outer",
+                                                                          on = ["HomeTeam", "AwayTeam"])
         # results directory
         self.results_dir = self.path + "/results/20_21/"
         if not os.path.exists(self.results_dir):

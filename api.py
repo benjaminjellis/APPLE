@@ -469,16 +469,21 @@ def generate_and_return_visualisation(vis_type: str, request_id: str, full_reque
                                                 output_loc = historical_data_loc)
     visualizer = Visualisation(aggregated_data_filepath = historical_data_loc, show_visualisations = False)
     if vis_type == "all":
-        plots_to_return_to_strudel = [temp_dir_str + "/volatility.html",
+        plots_to_return_to_strudel = [temp_dir_str + "/weekly_winner.html",
+                                      temp_dir_str + "/overall_winner.html",
+                                      temp_dir_str + "/volatility.html",
                                       temp_dir_str + "/time_series.html",
                                       temp_dir_str + "/stratified_performance_top_6_teams.html",
-                                      temp_dir_str + "/stratified_performance_newly_promoted_teams.html"]
-        visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
-        visualizer.time_series(output_filepath = plots_to_return_to_strudel[1])
+                                      temp_dir_str + "/stratified_performance_newly_promoted_teams.html",
+                                      ]
+        visualizer.weekly_winner(output_filepath = plots_to_return_to_strudel[0])
+        visualizer.total_winner(output_filepath = plots_to_return_to_strudel[1])
+        visualizer.volatility(output_filepath = plots_to_return_to_strudel[2])
+        visualizer.time_series(output_filepath = plots_to_return_to_strudel[3])
         visualizer.stratified_performance(metric = "top 6 teams",
-                                          output_filepath = plots_to_return_to_strudel[2])
+                                          output_filepath = plots_to_return_to_strudel[4])
         visualizer.stratified_performance(metric = "newly promoted teams",
-                                          output_filepath = plots_to_return_to_strudel[3])
+                                          output_filepath = plots_to_return_to_strudel[5])
     elif vis_type == "volatility":
         plots_to_return_to_strudel = [temp_dir_str + "/volatility.html"]
         visualizer.volatility(output_filepath = plots_to_return_to_strudel[0])
