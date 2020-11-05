@@ -28,13 +28,15 @@ def validate_date(date: str) -> None:
         raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
 
-def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str, include_predictions: bool,
-                                authentication: dict, include_ftrs: bool) -> None:
+def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str, include_user_predictions: bool,
+                                authentication: dict, include_apple_predictions: bool, include_ftrs: bool) -> None:
     """
     Def to query STRUDEL fixtures endpoint and return fixtures with or without user predictions for specified date range
+    :param include_apple_predictions: bool
+            whether to include prediction made by APPLE
     :param include_ftrs: bool
             whether to include full time results 
-    :param include_predictions: bool
+    :param include_user_predictions: bool
             whether to include user predictions
     :param authentication: dict[str]
             token to pass in request
@@ -74,7 +76,7 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
                 # drop FTRs from DF
                 all_columns.remove("FTR")
                 response_raw = response_raw.drop(["FTR"], axis = 1)
-        if include_predictions:
+        if include_user_predictions:
             response_output = response_raw[
                 base_cols + [c for c in response_raw if c not in base_cols]]
             response_output = response_output.sort_values(by = ["Date", "Time"], axis = 0)
@@ -85,12 +87,10 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
                 # take out my test predictions
                 user_prediction_columns.remove("Ben")
                 response_output = response_output.drop(["Ben"], axis = 1)
-            """
-            if "APPLE" in user_prediction_columns:
+            if "APPLE" in user_prediction_columns and not include_apple_predictions:
                 # take out APPLE predictions
                 user_prediction_columns.remove("APPLE")
                 response_output = response_output.drop(["APPLE"], axis = 1)
-            """
 
             user_prediction_col_formatting_dict = {}
             for i in user_prediction_columns :
@@ -146,7 +146,8 @@ class StrudelInterface(object):
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,
-                                    include_predictions = True,
+                                    include_user_predictions = True,
+                                    include_apple_predictions = False,
                                     include_ftrs = False,
                                     authentication = self._token_header)
 
@@ -164,7 +165,8 @@ class StrudelInterface(object):
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,
-                                    include_predictions = False,
+                                    include_user_predictions = False,
+                                    include_apple_predictions = False,
                                     include_ftrs = False,
                                     authentication = self._token_header)
 
@@ -225,14 +227,16 @@ class StrudelInterface(object):
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,
-                                    include_predictions = True,
+                                    include_user_predictions = True,
                                     include_ftrs = True,
+                                    include_apple_predictions = True,
                                     authentication = self._token_header)
 
     def get_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
                                     output_loc = output_loc,
-                                    include_predictions = False,
+                                    include_user_predictions = False,
+                                    include_apple_predictions = False,
                                     include_ftrs = True,
                                     authentication = self._token_header)
