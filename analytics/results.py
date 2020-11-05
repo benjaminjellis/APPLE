@@ -140,9 +140,8 @@ class Predictions(object):
         user_prediction_cols = [col for col in user_prediction_cols_raw if "Prediction" in col]
         # aggregate weekly predictions
         this_week_predictions = this_week_predictions.merge(self.user_predictions, how = "inner",
-                                                            on = ["HomeTeam", "AwayTeam"])
-
-        weekly_pred_output_cols = ["HomeTeam", "AwayTeam", "Date", "APPLE Prediction"] + user_prediction_cols
+                                                            on = ["HomeTeam", "AwayTeam", "FixtureID"])
+        weekly_pred_output_cols = ["HomeTeam", "AwayTeam", "Date", "FixtureID", "APPLE Prediction"] + user_prediction_cols
 
         # format df for display
         this_week_predictions = this_week_predictions[
@@ -168,11 +167,11 @@ class Results(Predictions):
 
         # load in aggregated results file as the running log
         running_log = aggregated_results_file
-
         # load in full time results
         ftr = load_json_or_csv(ftrs)
         # cast date column as datetime dtype to avoid any merge issue on str representation of date
         ftr["Date"] = pd.to_datetime(ftr["Date"])
+        self.this_week_predictions["Date"] = pd.to_datetime(self.this_week_predictions["Date"])
 
         # standardise team names in ftrs
         ftr["HomeTeam"] = ftr.apply(
@@ -181,12 +180,12 @@ class Results(Predictions):
         ftr["AwayTeam"] = ftr.apply(
             lambda x: team_name_standardisation(x["AwayTeam"]),
             axis = 1)
-
+        self.this_week_predictions.to_csv("~/Desktop/check_weekly_preds.csv")
         # merge the user predictions and the full time results
-        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner", on = ["HomeTeam", "AwayTeam", "Date"])
+        results_and_predictions_df = self.this_week_predictions.merge(ftr, how = "inner", on = ["HomeTeam","AwayTeam","FixtureID"])
 
         # get number of matches were predicted for
-        results_and_predictions_df_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
+        results_and_predictions_df_cols = ["Time", "Week", "HomeTeam", "AwayTeam","FixtureID", "APPLE Prediction"] + self.user_prediction_cols + ["FTR"]
         results_and_predictions_df = results_and_predictions_df[results_and_predictions_df_cols]
         display(results_and_predictions_df)
 
