@@ -23,15 +23,17 @@ def validate_date(date: str) -> None:
     :return: nothing if date is correct, raises an error if date is wrong
     """
     try:
-        datetime.datetime.strptime(date, '%Y-%m-%d')
+        datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
         raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
 
-def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, output_loc: str, include_predictions: bool,
-                                authentication: dict) -> None:
+def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str, include_predictions: bool,
+                                authentication: dict, include_ftrs: bool, week: int = None) -> None:
     """
     Def to query STRUDEL fixtures endpoint and return fixtures with or without user predictions for specified date range
+    :param include_ftrs: bool
+            whether to include full time results 
     :param include_predictions: bool
             whether to include user predictions
     :param authentication: dict[str]
@@ -39,6 +41,8 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
     :param output_loc: str
             filepath specifying output location for csv
     :param week: int
+            Optional - only required for StrudelInterface Methods: get_fixtures_and_user_predictions &
+            get_fixtures
             week number, used to display data to end users
     :param start_date: str
             Date, format YYYY-MM-DD, for the start date of fixtures window
@@ -52,51 +56,61 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, week: int, outpu
     # defined endpoint
     end_point = "https://beatthebot.co.uk/iapi/fixtures/bydate?startDate=" + start_date + "&endDate=" + end_date + "&format=csv"
     # send GET request
-    print(colored("Requesting user predictions for fixtures between {} and {}".format(start_date, end_date), "red"))
+    print(colored("Requesting data for fixtures between {} and {}".format(start_date, end_date), "red"))
     response = requests.get(end_point, headers = authentication)
     # check response
     if response.status_code == 200:
         print(colored("Successfully obtained predictions for fixtures between {} and {}".format(start_date, end_date),
                       "green"))
-        user_predictions_content = response.content
-        user_predictions_raw = pd.read_csv(io.StringIO(user_predictions_content.decode('utf-8')))
-        user_predictions_raw["Week"] = week
-        # rename columns
-        user_predictions_raw.rename(
+        response_content = response.content
+        response_raw = pd.read_csv(io.StringIO(response_content.decode('utf-8')))
+        response_raw.to_csv("~/Desktop/test123.csv")
+        # rename some columns
+        response_raw.rename(
             {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time", "fixtureId": "FixtureID"}, axis = 1,
             inplace = True)
-        # rearrange cols
-        base_cols = ["Date", "Week", "Time", "HomeTeam", "AwayTeam", "FixtureID"]
+        all_columns = list(response_raw.columns)
+        if include_ftrs:
+            base_cols = ["Date", "Time", "HomeTeam", "AwayTeam", "FixtureID", "FTR"]
+        else:
+            if "FTR" in all_columns:
+                # drop FTRs from DF
+                all_columns.remove("FTR")
+                response_raw = response_raw.drop(["FTR"], axis = 1)
+            base_cols = ["Date", "Time", "HomeTeam", "AwayTeam", "FixtureID"]
+        if week is not None:
+            response_raw["Week"] = week
+            base_cols += ["Week"]
         if include_predictions:
-            user_predictions_output = user_predictions_raw[
-                base_cols + [c for c in user_predictions_raw if c not in base_cols]]
-            user_predictions_output = user_predictions_output.sort_values(by = ["Date", "Time"], axis = 0)
+            response_output = response_raw[
+                base_cols + [c for c in response_raw if c not in base_cols]]
+            response_output = response_output.sort_values(by = ["Date", "Time"], axis = 0)
             # append " Prediction" to header of each user prediction column
-            user_predictions_cols = list(user_predictions_output.columns)
+            user_predictions_cols = list(response_output.columns)
             user_prediction_columns = [col for col in user_predictions_cols if col not in base_cols]
             if "Ben" in user_prediction_columns:
                 # take out my test predictions
                 user_prediction_columns.remove("Ben")
-                user_predictions_output = user_predictions_output.drop(["Ben"], axis = 1)
+                response_output = response_output.drop(["Ben"], axis = 1)
             if "APPLE" in user_prediction_columns:
-                # take out my APPLE predictions
+                # take out APPLE predictions
                 user_prediction_columns.remove("APPLE")
-                user_predictions_output = user_predictions_output.drop(["APPLE"], axis = 1)
+                response_output = response_output.drop(["APPLE"], axis = 1)
 
             user_prediction_col_formatting_dict = {}
             for i in user_prediction_columns :
                 user_prediction_col_formatting_dict[i] = i + " Prediction"
-            user_predictions_output.rename(user_prediction_col_formatting_dict, axis = 1, inplace = True)
+            response_output.rename(user_prediction_col_formatting_dict, axis = 1, inplace = True)
         else:
-            user_predictions_output = user_predictions_raw[base_cols]
+            response_output = response_raw[base_cols]
         output_dir = Path(output_loc)
         output_dir = output_dir.parent
         if not output_dir.exists():
             output_dir.mkdir(parents = True)
-        user_predictions_output.to_csv(output_loc, index_label = False, index = False)
+        response_output.to_csv(output_loc, index_label = False, index = False)
     else:
         raise ValueError(
-            "Unsuccessful in obtaining user predictions for fixtures between {} and {}".format(start_date, end_date))
+            "Unsuccessful in obtaining requested data for fixtures between {} and {}".format(start_date, end_date))
 
 
 class StrudelInterface(object):
@@ -141,6 +155,7 @@ class StrudelInterface(object):
                                     week = week,
                                     output_loc = output_loc,
                                     include_predictions = True,
+                                    include_ftrs = False,
                                     authentication = self._token_header)
 
     def get_fixtures(self, start_date: str, end_date: str, week: int, output_loc: str) -> None:
@@ -161,6 +176,7 @@ class StrudelInterface(object):
                                     week = week,
                                     output_loc = output_loc,
                                     include_predictions = False,
+                                    include_ftrs = False,
                                     authentication = self._token_header)
 
     def return_predictions(self, prediction_details: dict) -> None:
@@ -178,7 +194,6 @@ class StrudelInterface(object):
             print(colored("APPLE prediction for fixture with id {} failed to export to Strudel".format(prediction_details["fixture"]), "green"))
             print(response.status_code)
             print(response.content)
-
 
     def return_visualisations(self, html_filepath: str, visualisation_title: str, notes: str, request_id: str) -> bool:
         """
@@ -216,3 +231,19 @@ class StrudelInterface(object):
             print(response.status_code)
             print(response.content)
             return False
+
+    def get_predictions_and_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
+        query_fixtures_endpoint_csv(start_date = start_date,
+                                    end_date = end_date,
+                                    output_loc = output_loc,
+                                    include_predictions = True,
+                                    include_ftrs = True,
+                                    authentication = self._token_header)
+
+    def get_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
+        query_fixtures_endpoint_csv(start_date = start_date,
+                                    end_date = end_date,
+                                    output_loc = output_loc,
+                                    include_predictions = False,
+                                    include_ftrs = True,
+                                    authentication = self._token_header)
