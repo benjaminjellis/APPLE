@@ -29,7 +29,7 @@ def validate_date(date: str) -> None:
 
 
 def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str, include_predictions: bool,
-                                authentication: dict, include_ftrs: bool, week: int = None) -> None:
+                                authentication: dict, include_ftrs: bool) -> None:
     """
     Def to query STRUDEL fixtures endpoint and return fixtures with or without user predictions for specified date range
     :param include_ftrs: bool
@@ -40,10 +40,6 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
             token to pass in request
     :param output_loc: str
             filepath specifying output location for csv
-    :param week: int
-            Optional - only required for StrudelInterface Methods: get_fixtures_and_user_predictions &
-            get_fixtures
-            week number, used to display data to end users
     :param start_date: str
             Date, format YYYY-MM-DD, for the start date of fixtures window
     :param end_date: str
@@ -67,20 +63,17 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
         response_raw.to_csv("~/Desktop/test123.csv")
         # rename some columns
         response_raw.rename(
-            {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time", "fixtureId": "FixtureID"}, axis = 1,
+            {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time", "fixtureId": "FixtureID", 'week': 'Week'}, axis = 1,
             inplace = True)
         all_columns = list(response_raw.columns)
+        base_cols = ["Date", "Time", "Week", "HomeTeam", "AwayTeam", "FixtureID"]
         if include_ftrs:
-            base_cols = ["Date", "Time", "HomeTeam", "AwayTeam", "FixtureID", "FTR"]
+            base_cols = base_cols + ["FTR"]
         else:
             if "FTR" in all_columns:
                 # drop FTRs from DF
                 all_columns.remove("FTR")
                 response_raw = response_raw.drop(["FTR"], axis = 1)
-            base_cols = ["Date", "Time", "HomeTeam", "AwayTeam", "FixtureID"]
-        if week is not None:
-            response_raw["Week"] = week
-            base_cols += ["Week"]
         if include_predictions:
             response_output = response_raw[
                 base_cols + [c for c in response_raw if c not in base_cols]]
@@ -92,10 +85,12 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
                 # take out my test predictions
                 user_prediction_columns.remove("Ben")
                 response_output = response_output.drop(["Ben"], axis = 1)
+            """
             if "APPLE" in user_prediction_columns:
                 # take out APPLE predictions
                 user_prediction_columns.remove("APPLE")
                 response_output = response_output.drop(["APPLE"], axis = 1)
+            """
 
             user_prediction_col_formatting_dict = {}
             for i in user_prediction_columns :
@@ -137,13 +132,11 @@ class StrudelInterface(object):
         else:
             raise ValueError("Incorrect Log in details, log in unsuccessful")
 
-    def get_fixtures_and_user_predictions(self, start_date: str, end_date: str, week: int, output_loc: str) -> None:
+    def get_fixtures_and_user_predictions(self, start_date: str, end_date: str, output_loc: str) -> None:
         """
         Method to get the fixtures and predictions from the STRUDEL endpoint for specified date range
         :param output_loc: str
                 filepath specifying output location for csv
-        :param week: int
-                week number, used to display data to end users
         :param start_date: str
                 Date, format YYYY-MM-DD, for the start date of fixtures window
         :param end_date: str
@@ -152,19 +145,16 @@ class StrudelInterface(object):
         """
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
-                                    week = week,
                                     output_loc = output_loc,
                                     include_predictions = True,
                                     include_ftrs = False,
                                     authentication = self._token_header)
 
-    def get_fixtures(self, start_date: str, end_date: str, week: int, output_loc: str) -> None:
+    def get_fixtures(self, start_date: str, end_date: str, output_loc: str) -> None:
         """
         Method to get the fixtures from the STRUDEL endpoint for specified date range
         :param output_loc: str
                 filepath specifying output location for csv
-        :param week: int
-                week number, used to display data to end users
         :param start_date: str
                 Date, format YYYY-MM-DD, for the start date of fixtures window
         :param end_date: str
@@ -173,7 +163,6 @@ class StrudelInterface(object):
         """
         query_fixtures_endpoint_csv(start_date = start_date,
                                     end_date = end_date,
-                                    week = week,
                                     output_loc = output_loc,
                                     include_predictions = False,
                                     include_ftrs = False,
