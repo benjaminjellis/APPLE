@@ -264,5 +264,6 @@ class MineOdds(object):
 
         # audit warnings about odds missing from mining
         odds_missing_warnings(df = output)
-
-        output.to_json(self.path + "/" + self.mined_data_output)
+        mined_odds_output_loc = self.path + "/" + self.mined_data_output
+        if user_file_overwrite_check(mined_odds_output_loc):
+            output.to_json(mined_odds_output_loc)

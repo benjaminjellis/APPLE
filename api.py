@@ -127,7 +127,7 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
                          # interface with STRUDEL is required here
                          data_for_predictions = task['data_for_predictions'],
                          job_name = task['job_name'],
-                         week = 5)
+                         week = task['week'])
     # check if backtesting is requested, if so complete
     if task["backtest"] == "true":
         update_task_status(task_id = task["task_id"], status_update = "Backtesting saved models", task_list = task_list)
@@ -144,6 +144,7 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
                            task_list = task_list)
         apple_object.cleanup()
     rmtree(temp_dir)
+    rmtree(temp_dir.parent)
     update_task_status(task_id = task["task_id"], status_update = "Complete",
                        task_list = task_list)
 
