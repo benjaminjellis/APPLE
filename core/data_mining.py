@@ -1,5 +1,5 @@
 """
-Miners are objects used to mine data that APPLE runs off
+Class used to mine features (odds) required to make predictions
 """
 
 from selenium import webdriver
@@ -106,7 +106,7 @@ class MineOdds(object):
         self.mined_data_output = mined_data_output
 
         print(colored(
-            "WARNING: Mine is currently undergoing testing an cannot be relied upon for data mining at present. Please do not use"))
+            "WARNING: Mine is currently undergoing development an cannot be relied upon for data mining at present. Please do not use"), "red")
         self.driver = webdriver.Safari()
         self.path = str(Path().absolute())
 
@@ -114,9 +114,9 @@ class MineOdds(object):
         try:
             fixtures = pd.read_csv(
                 self.path + "/" + fixtures_file)
-            self.fixtures = fixtures[["HomeTeam", "AwayTeam"]]
+            self.fixtures = fixtures[["HomeTeam", "AwayTeam", "FixtureID"]]
         except FileNotFoundError:
-            raise FileNotFoundError("User predictions file {} not found, try using MineFixtures".format(fixtures_file))
+            raise FileNotFoundError("User predictions file {} not found".format(fixtures_file))
 
         # we need to check that each of the HomeTeam and AwayTeam entries match the schema from raw data
         # use the team_cleaner def and a lambda function to do this
@@ -171,9 +171,9 @@ class MineOdds(object):
         self.PINACLE = pd.DataFrame(data = combined[0:, 0:], columns = ["HomeTeam", "AwayTeam", "PSH", "PSD", "PSA"])
 
     def bet365(self):
-        pass
         url = "https://www.bet365.com/#/AC/B1/C1/D13/E51761579/F2/"
-        self.driver.get(url)
+        # self.driver.get(url)
+        raise Exception("Unable to mine odds from BET365")
 
     def bwin(self):
         url = "https://sports.bwin.com/en/sports/football-4/betting/england-14/premier-league-46"
@@ -252,15 +252,17 @@ class MineOdds(object):
         """
         self.williamhill()
         self.pinacle()
-        #self.bwin()
-        #self.interwetten()
-        #self.bet365()
+        # self.bwin()
+        # self.bet365()
         self.driver.close()
 
         # mergeing / joining DFs
         intermediate_1 = self.fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
-        #intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
+        # intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
         output = intermediate_1.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
+        # merge, inner with self.fixtures to get fiixture ID
+        output = output.merge(self.fixtures, how = "inner", on = ["HomeTeam", "AwayTeam"])
+
 
         # audit warnings about odds missing from mining
         odds_missing_warnings(df = output)

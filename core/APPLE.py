@@ -4,7 +4,7 @@ APPLE API
 
 from core.train import Train
 from core.predict import Predict
-from core.miners import user_file_overwrite_check
+from core.data_mining import user_file_overwrite_check
 from core.cleanup import cleanup
 from core.backtest import Backtest
 from core.loaders import load_json_or_csv
