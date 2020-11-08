@@ -6,6 +6,7 @@ The class then updates the model log with the backtesing results
 import tensorflow as tf
 from pathlib import Path
 import pandas as pd
+from pandas import DataFrame
 from core.scaler import scale_df_with_params
 from core.loaders import load_json_or_csv, load_and_aggregate
 from core.data_processing import formatting_for_passing_to_model
@@ -14,9 +15,9 @@ from core.data_processing import formatting_for_passing_to_model
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def log_update(model_id, results, model_log):
+def log_update(model_id: str, results: tuple, model_log: DataFrame) -> None:
     """
-    Function used to update each model entry in the model log once the
+    Def used to update each model entry in the model log once the
     model has been backtested against new data
     :param model_id: str
             uniqe model id to update log for
@@ -35,9 +36,13 @@ def log_update(model_id, results, model_log):
 
 class Backtest(object):
 
-    def __init__(self, data_to_backtest_on, ftrs = None):
+    def __init__(self, data_to_backtest_on: str, ftrs: str = None):
         """
         Constructor loads the model log, aggregates data to make backtesting dataset, maps locations of saved models
+        :param data_to_backtest_on: str
+                Filepath for data used to backtest on
+        :param ftrs: str
+                Filpeath for full time results
         """
         # load model log
         self.path = str(Path().absolute())
@@ -57,7 +62,7 @@ class Backtest(object):
             self.raw_backtesting_data = mined_data_aggregated
         # check here if the FTRs are provided
 
-    def model(self, model_id):
+    def model(self, model_id: str) -> None:
         """
         Method to backtest a single model
         :param model_id:  str
@@ -111,7 +116,7 @@ class Backtest(object):
         # now update the log with the results
         log_update(model_id = model_id, results = results, model_log = self.model_log)
 
-    def models(self, models):
+    def models(self, models: list) -> None:
         """
         Method to backtest one of more models
         :param models: list of str
@@ -121,7 +126,7 @@ class Backtest(object):
         for model in models:
             self.model(model_id = model)
 
-    def all(self):
+    def all(self) -> None:
         """
         Method to backtest all saved models
         :return: nothing
@@ -132,7 +137,7 @@ class Backtest(object):
         for model in models:
             self.model(model_id = model)
 
-    def commit_log_updates(self):
+    def commit_log_updates(self) -> None:
         """
         Method to commit log updates made by any instance to file
         :return: nothing
