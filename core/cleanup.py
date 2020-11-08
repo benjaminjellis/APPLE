@@ -9,14 +9,16 @@ from tqdm import tqdm
 import pathlib
 
 
-def cleanup(upper_limit = None, prct_to_remove = None):
+def cleanup(upper_limit: int = None, prct_to_remove: int = None) -> None:
     """
     Def to clean up saved models directory
     :param upper_limit: int
-            Optional - Threshold number of models to retain. Once this value is exceeded this method will start to delete
+            Optional
+            Threshold number of models to retain. Once this value is exceeded this method will start to delete
             the lowest performing models. Default and minimum value is 15.
     :param prct_to_remove:int
-            Optional - Percentage of models to remove. Once upper_limit is exceeded by the number of models retained
+            Optional
+            Percentage of models to remove. Once upper_limit is exceeded by the number of models retained
             in the saved model directory the lowest performing n% of models are deleted, where n is prct_to_remove.
             Default value is 50 and maximum value is 80.
     :return Nothing
