@@ -507,7 +507,9 @@ def generate_and_return_visualisation(vis_type: str, request_id: str, full_reque
         update_request_status(request_id = request_id, status_update = "Partially Complete", request_list = vis_requests)
         add_to_request_status(request_id = request_id, key_to_add = "Plot(s) failed to load", value_to_add = ",".join(failures), request_list = vis_requests)
     else:
+        # delete temporary storage
         rmtree(temp_dir)
+        rmtree(temp_dir.parent)
         update_request_status(request_id = request_id, status_update = "Complete", request_list = vis_requests)
 
 

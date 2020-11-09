@@ -13,8 +13,9 @@ class Visualisation(object):
 
     def __init__(self, show_visualisations: bool, aggregated_data_filepath: str):
         """
+        :param show_visualisations: bool
         :param aggregated_data_filepath: str
-                filepath of aggregated results file to update
+                Relative filepath of aggregated results file to load
         """
         self.show_visualisations = show_visualisations
         # define path
@@ -130,7 +131,7 @@ class Visualisation(object):
         fig = go.Figure(data = [go.Table(
             header = dict(values = list(this_week_summed.columns),
                           align = 'left'),
-            cells = dict(values = [this_week_summed["Predictor"], this_week_summed["Week"], this_week_summed["Correct Predictions"], this_week_summed["Accuracy of Predictions (%)"]],
+            cells = dict(values = [this_week_summed["Predictor"], this_week_summed["Correct Predictions"], this_week_summed["Week"], this_week_summed["Accuracy of Predictions (%)"]],
                          align = 'left'))
         ])
         winner = winners_from_dataframe(this_week_summed, find_max_of = "Accuracy of Predictions (%)", get_winners_from = "Predictor")
