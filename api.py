@@ -513,4 +513,4 @@ if __name__ == '__main__':
     if not os.path.exists('db.sqlite'):
         db.create_all()
     # run app here
-    app.run(debug = True)
+    app.run(debug = False)
