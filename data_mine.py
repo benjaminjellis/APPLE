@@ -21,3 +21,5 @@ miner = MineOdds(fixtures_file = user_prediction_loc_rel + user_prediction_file_
                  mined_data_output = "data/mined_data/20_21/week8.json")
 
 miner.all()
+
+# a = sic.upload_mined_data(name = "test_5", mined_data_to_upload = data)

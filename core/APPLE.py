@@ -18,7 +18,7 @@ from pathlib import Path
 
 class APPLE(object):
 
-    def __init__(self, use_strudel: bool, fixtures_to_predict: str, data_for_predictions: str, job_name: str, week: int, start_date: str = None, end_date: str = None):
+    def __init__(self, use_strudel: bool, fixtures_to_predict: str, data_for_predictions: str, job_name: str, start_date: str = None, end_date: str = None):
         """
         Constructor loads file into memory, creates file paths, results directories and merges data and fixtures file
         :param use_strudel: bool
@@ -29,6 +29,7 @@ class APPLE(object):
                 locally
         :param data_for_predictions: str
                 filepath for the data a model will use for predictions, file should be json or csv
+                or id for the mined_data object stored in STRUDEL if use_strudel is True
         :param job_name: str
                 name / ID of the job, this will determine the name of the output directory
         :param week: int
@@ -43,7 +44,6 @@ class APPLE(object):
         # define path for making dirs and navigating
         self.path = str(Path().absolute())
         fixtures_to_predict = self.path + "/" + fixtures_to_predict
-        data_for_predictions = self.path + "/" + data_for_predictions
 
         if use_strudel:
             # import user predictions from STRUDEL
@@ -55,11 +55,21 @@ class APPLE(object):
                 strudel_connection.get_fixtures_and_user_predictions(start_date = start_date,
                                                                      end_date = end_date,
                                                                      output_loc = fixtures_to_predict)
+                if data_for_predictions.isnumeric():
+                    # if data_for_predictions is a number this means it's an ID that can be used to grab the data from
+                    # STRUDEL so do so
+                    output_filepaht_for_mined_data = self.path + "/temporary_data/" + job_name + "/mined_data_id_" + data_for_predictions + ".json"
+                    strudel_connection.get_mined_data(mined_data_id = data_for_predictions, output_filepath = output_filepaht_for_mined_data)
+                    data_for_predictions = output_filepaht_for_mined_data
+                else:
+                    raise Exception("Got filepath not id, cannot query mined_data from Strudel")
+        else:
+            data_for_predictions = self.path + "/" + data_for_predictions
 
         # load in the fixtures to predict, these are also user predictions
         self.fixtures_to_predict = load_json_or_csv(filepath = fixtures_to_predict)
 
-        # load in the data to use to make predictions
+        # load in the data to use to make predictions (the features to give to the model)
         data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
 
         # clean data_for_predictions_to_merge (mined data) - this is conversion from british style odds
