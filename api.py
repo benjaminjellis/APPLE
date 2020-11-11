@@ -126,8 +126,7 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
                              'task_id'] + "_fixtures_to_predict.csv",
                          # interface with STRUDEL is required here
                          data_for_predictions = task['data_for_predictions'],
-                         job_name = task['job_name'],
-                         week = task['week'])
+                         job_name = task['task_id'])
     # check if backtesting is requested, if so complete
     if task["backtest"] == "true":
         update_task_status(task_id = task["task_id"], status_update = "Backtesting saved models", task_list = task_list)
@@ -315,7 +314,6 @@ def create_task():
         'job_name': request.json['job_name'],
         'start_date': request.json['start_date'],
         'end_date': request.json['end_date'],
-        'week': request.json['week'],
         'data_for_predictions': request.json['data_for_predictions'],
         'task_status': "Submitted",
         "backtest": request.json['backtest'],

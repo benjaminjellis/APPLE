@@ -242,6 +242,54 @@ class StrudelInterface(object):
                                     include_apple_predictions = True,
                                     authentication = self._token_header)
 
+    def get_mined_data(self, mined_data_id: str, output_filepath: str) -> None:
+        """
+        def to get mined data from STRUDEL
+        :param mined_data_id: str
+                id used to access uploaded mined data
+        :param output_filepath: str
+                where to
+        :return: nothing
+        """
+        end_point = "https://beatthebot.co.uk/iapi/mined-data/" + mined_data_id
+        response = requests.get(end_point, headers = self._token_header)
+        if response.status_code == 200:
+            print(colored("Successfully obtained mined data for id: {}".format(mined_data_id), "green"))
+            response_json = response.json()
+            response_json = response_json["entity"]['json']
+            # then dump out json to filepath
+            with open(output_filepath, 'w') as outfile:
+                json.dump(response_json, outfile)
+        else:
+            print(response.status_code)
+            print(response)
+
+    def upload_mined_data(self, name: str, mined_data_to_upload: dict) -> str:
+        """
+        def to upload mined data to use for predictions to STRUDEL
+        :param name: str
+                name to tag upload with
+        :param mined_data_to_upload: dict
+                the data to uplaod
+        :return: id - str
+                the id that can be used to access the uploaded data
+        """
+        end_point = "https://beatthebot.co.uk/iapi/mined-data"
+        body = {
+            "name": name,
+            "json": mined_data_to_upload
+        }
+        response = requests.put(end_point, headers = self._token_header, json = body)
+        # response = requests.get(end_point, headers = self._token_header)
+        print(response.status_code)
+        if response.status_code == 200:
+            response_content = response.json()
+            response_content = response_content["entity"]
+            mined_data_id = response_content["id"]
+            return mined_data_id
+        else:
+            print(response.content)
+
     def get_ftrs(self, start_date: str, end_date: str, output_loc: str) -> None:
         """
         Def to get full-timne results of completed fixtures
