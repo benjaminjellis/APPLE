@@ -27,7 +27,6 @@ geonamescache==1.1.0
 google-auth==1.16.1
 google-auth-oauthlib==0.4.1
 google-pasta==0.2.0
-grpcio==1.29.0
 h5py==2.10.0
 idna==2.9
 importlib-metadata==1.6.1
