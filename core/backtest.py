@@ -3,7 +3,6 @@ Backtest is a class used to backtest and thus evaluate saved models on data (min
 The class then updates the model log with the backtesing results
 """
 
-import tensorflow as tf
 from pathlib import Path
 import pandas as pd
 from pandas import DataFrame
@@ -78,7 +77,7 @@ class Backtest(object):
         # load scaled
         sclaer_coeffs_loc = self.saved_models_dir + model_id + "/" + model_id + "_coeffs.csv"
         # grab the model
-        loaded_model = tf.keras.models.load_model(self.saved_models_dir + model_id + "/" + model_id + ".h5")
+        #loaded_model = tf.keras.models.load_model(self.saved_models_dir + model_id + "/" + model_id + ".h5")
         exp_features_df = pd.read_csv(self.saved_models_dir + model_id + "/" + model_id + ".csv")
         exp_features = exp_features_df["columns"].to_list()
 

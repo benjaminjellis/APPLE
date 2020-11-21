@@ -24,9 +24,6 @@ from shutil import rmtree
 path = str(Path().absolute())
 home_dir_abs = str(Path().absolute().parent.parent)
 
-# Various defs
-
-
 def return_apple_result_to_strudel(apple_results: DataFrame) -> None:
     """
     Def to return APPLE produced predictions to STRUDEL

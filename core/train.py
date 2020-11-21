@@ -2,7 +2,9 @@
 Class used to train feed-forward MLP classifiers to make predictions
 """
 
-import tensorflow as tf
+from core.nnet import NNet, train
+from torch import nn, save
+import torch.optim as optim
 import pandas as pd
 import urllib.request
 import os
@@ -23,14 +25,13 @@ warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
 class Train(object):
 
-    def __init__(self, model_type: str):
+    def __init__(self) -> None:
 
         """
         :param model_type: str
                     one of "model 1", "model 2" or "model 3", see documentation for discussion on models
         """
 
-        self.model_type = model_type
         self.path = str(pathlib.Path().absolute())
 
         data_dir = self.path + "/data/raw/"
@@ -44,16 +45,17 @@ class Train(object):
             urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1920/E0.csv", data_dir + "1920.csv")
             urllib.request.urlretrieve("https://www.football-data.co.uk/mmz4281/1819/E0.csv", data_dir + "1819.csv")
         except RemoteDisconnected:
-            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead", "red"))
+            print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead",
+                          "red"))
         except HTTPError:
             print(colored("Error connecting to remote when sourcing updated data, using data stored locally instead",
-                  "red"))
+                          "red"))
 
         raw_data_18_19 = pd.read_csv(data_dir + "1819.csv")
         raw_data_19_20 = pd.read_csv(data_dir + "1920.csv")
         raw_data_20_21 = pd.read_csv(data_dir + "2021.csv")
 
-        self.raw_data_combined = dp.preprocessing(raw_data_19_20, raw_data_20_21)
+        self.raw_data_combined = dp.preprocessing(raw_data_19_20, raw_data_20_21, raw_data_18_19)
 
     def train(self, epochs: int, verbose: bool) -> None:
         """
@@ -74,70 +76,32 @@ class Train(object):
         if not os.path.exists(model_output_dir):
             os.makedirs(model_output_dir)
 
-        # process and split the data, return the shape of the data plus coeffs used to scale the data
-        train_raw, test_raw, input_shape, ord_cols_df, scaler_coeffs = dp.processing(self.raw_data_combined,
-                                                                                     model_type = self.model_type,
-                                                                                     test_size = 0.2)
+        # process and split the data, coeffs used to scale the data
+        train_tensor, test_tensor, ord_cols_df, coeffs = dp.processing(input_df = self.raw_data_combined,
+                                                                       test_size = 0.2,
+                                                                       train_batch_size = 5)
 
-        # preapre train data
-        # remove the target
-        train_labels = train_raw.pop("FTR")
-        train = train_raw
-        # turn raw data into tf dataset
-        train_tensor = tf.data.Dataset.from_tensor_slices((train.values, train_labels.values))
-        train_final = train_tensor.batch(5)
+        # create a neural net
+        net = NNet()
 
-        # prepare test data
-        test_labels = test_raw.pop("FTR")
-        test_length = test_raw.shape[0]
-        test_labels = test_labels.to_numpy()
-        test = test_raw
+        # loss function
+        criterion = nn.CrossEntropyLoss()
+        # optimiser
 
-        test = test.to_numpy()
-
-        test = test.reshape(test_length, input_shape)
-        test_labels = test_labels.reshape(test_length, 1)
-
-        def get_compiled_model() -> tf.keras.Sequential:
-            """
-            :return: compiled model
-            """
-            model = tf.keras.Sequential([
-                tf.keras.Input(shape = (input_shape,)),
-                tf.keras.layers.Dense(10),
-                tf.keras.layers.Dense(3, activation = "softmax")
-            ])
-
-            model.compile(optimizer = "adam",
-                          loss = tf.keras.losses.sparse_categorical_crossentropy,
-                          metrics = ["accuracy"])
-            return model
-
-        model = get_compiled_model()
-
-        if verbose:
-            history = model.fit(train_final, epochs = epochs)
-            print("\nhistory dict:", history.history)
-        else:
-            history = model.fit(train_final, epochs = epochs, verbose = 0)
-
-        self.model_type = self.model_type.replace(" ", "")
+        optimizer = optim.Adagrad(net.parameters(), lr = 0.001, weight_decay = 0.001)
+        history = train(nn = net, train_tensor = train_tensor, test_tensor = test_tensor, epochs = epochs, criterion = criterion,
+                        optimiser = optimizer, verbose = verbose)
 
         today = date.today().strftime("%Y%m%d")
 
         # output the model, the columns and scaler coeffs
-        model.save(model_output_dir + model_id + ".h5")
+        save(net.state_dict(), model_output_dir + model_id + ".pth")
         ord_cols_df.to_csv(model_output_dir + model_id + ".csv", index_label = False, index = False)
-        scaler_coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label = False, index = False)
-
-        results = model.evaluate(test, test_labels, batch_size = 50, verbose = 0)
-
-        if verbose:
-            print("test loss, test acc:", results)
+        coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label = False, index = False)
 
         log_output = self.path + "/saved_models/model_log.csv"
-        log_entry = {'Model type': self.model_type[-1:], "Date": today, "Model ID": model_id, "Test Loss": [results[0]],
-                     "Test Acc": [results[1]]}
+        log_entry = { "Model ID": model_id, "Date": today,
+                     "Test Acc": [history[1][-1]], "Test F1": [history[2][-1]]}
 
         # update the log with results of test of model
         try:
