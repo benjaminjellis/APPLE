@@ -87,7 +87,7 @@ class APPLE(object):
         # merge the fixtures and data
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge,
                                                                           how = "outer",
-                                                                          on = ["HomeTeam", "AwayTeam"])
+                                                                          on = ["HomeTeam", "AwayTeam", "FixtureID"])
         # results directory
         self.results_dir = self.path + "/results/20_21/"
         if not os.path.exists(self.results_dir):
