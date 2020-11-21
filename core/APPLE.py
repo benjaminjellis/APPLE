@@ -88,6 +88,7 @@ class APPLE(object):
         self.fixtures_and_data_for_prediction = fixtures_to_predict.merge(data_for_predictions_to_merge,
                                                                           how = "outer",
                                                                           on = ["HomeTeam", "AwayTeam", "FixtureID"])
+        self.fixtures_and_data_for_prediction.to_csv("~/Desktop/data_fo_predictions.csv")
         # results directory
         self.results_dir = self.path + "/results/20_21/"
         if not os.path.exists(self.results_dir):
@@ -111,10 +112,8 @@ class APPLE(object):
         """
 
         # train a model of all three 3 model types  on the latest data
-        print(colored("Training models on new data....", "green"))
-        Train(model_type = "model 1").train(epochs = 22, verbose = True)
-        Train(model_type = "model 2").train(epochs = 22, verbose = True)
-        Train(model_type = "model 3").train(epochs = 22, verbose = True)
+        print(colored("Training model on new data....", "green"))
+        Train().train(epochs = 6, verbose = True)
         print(colored("Training completed", "green"))
 
         # interrogate the model log to pick the best models compiled thus far
@@ -132,7 +131,7 @@ class APPLE(object):
         for model in models:
             print(colored("Using model No. " + str(model) + " for prediction", "yellow"))
             predicted_results = Predict(model_id = model).predict(
-                fixtures_to_predict = self.fixtures_and_data_for_prediction)
+                data_and_fixtures = self.fixtures_and_data_for_prediction)
             print(colored(predicted_results, "blue"))
             if return_results:
                 return predicted_results

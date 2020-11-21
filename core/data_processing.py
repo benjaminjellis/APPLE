@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from core.scaler import scale_df
 import numpy as np
-from termcolor import colored
+from core.scaler import scale_df_with_params
 from fuzzywuzzy import process
 from pandas import DataFrame
 from math import ceil
@@ -35,9 +35,9 @@ def create_batched_tensor_dataset(batch_size: int, features: array, labels: arra
     else:
         # split the passed arrays into batches and save each batch as an entry in a list
         indices_or_sections = int(features_rows / batch_size)
-        features = np.array_split(features,indices_or_sections)
-        labels = np.array_split(labels,indices_or_sections)
-        for i in range(0,len(features)):
+        features = np.array_split(features, indices_or_sections)
+        labels = np.array_split(labels, indices_or_sections)
+        for i in range(0, len(features)):
             # convert the arrays in each entry of the lists into tensors
             features[i] = Tensor(features[i])
             labels[i] = Tensor(labels[i]).long()
@@ -45,7 +45,8 @@ def create_batched_tensor_dataset(batch_size: int, features: array, labels: arra
         # return the batched tesnor representation of the passed np arrays
         return batched_tensor
 
-def correct_class_imbalance(train_dataset: DataFrame, multiplier: int) -> DataFrame:
+
+def correct_class_imbalance(train_dataset: DataFrame, final_multiplier: int) -> DataFrame:
     """
     Def to over-sample classes underrepresented in training dataset
     :param multiplier: int
@@ -80,7 +81,7 @@ def correct_class_imbalance(train_dataset: DataFrame, multiplier: int) -> DataFr
             data_filtered = pd.concat([data_filtered] * multiplier).reset_index(drop = True)
             data_filtered = data_filtered.truncate(after = delta - 1)
         train_dataset = pd.concat([train_dataset, data_filtered]).reset_index(drop = True)
-    train_dataset = pd.concat([train_dataset] * 50).reset_index(drop = True)
+    train_dataset = pd.concat([train_dataset] * final_multiplier).reset_index(drop = True)
     train_dataset = train_dataset.sample(frac = 1)
     return train_dataset
 
@@ -129,30 +130,13 @@ def clean_mined_data(dataframe: DataFrame):
     return dataframe
 
 
-def team_one_hot_encoding(dataframe):
-    """
-    def to use one hot encoding for team anmes
-    :param dataframe: dataframe to apply one hot encoding to
-    :return: one hot encoded df
-    """
-    # one hot encoding for away team and home team features
-    ats = pd.get_dummies(dataframe["AwayTeam"], prefix = "at")
-    hts = pd.get_dummies(dataframe["HomeTeam"], prefix = "ht")
-    dataframe = pd.concat([dataframe, ats], axis = 1, sort = False)
-    dataframe = pd.concat([dataframe, hts], axis = 1, sort = False)
-
-    dataframe.pop("AwayTeam")
-    dataframe.pop("HomeTeam")
-
-    return dataframe
-
-
-def preprocessing(df1, df2, df3):
+def preprocessing(df1: DataFrame, df2: DataFrame, df3: DataFrame) -> DataFrame:
     """
     :param df1: dataframe
     :param df2: dataframe
+    :param df3: dataframe
     :return: dataframe
-             a combined dataframe made up of the union of columns in df1 and df2
+             a combined dataframe made up of the union of columns in df1, df2 and df3
     """
 
     dataframes = [df1, df2, df3]
@@ -165,17 +149,13 @@ def preprocessing(df1, df2, df3):
     return raw_data_combined
 
 
-def processing(input_df: DataFrame, model_type: str, test_size: float, train_batch_size: int):
+def processing(input_df: DataFrame, test_size: float, train_batch_size: int):
     """
+    :param input_df: dataframe
+            dataframe to process
     :param train_batch_size:
     :param test_size: float
             percentage of data to be used as train data
-    :param input_df: dataframe
-            dataframe to process
-    :param model_type: string
-            which model type to process data for
-    :param model_type: float
-            fraction, size of the test dataset returned
     :return:
     train_raw: dataframe
             dataframe of the raw data to be used for training
@@ -189,34 +169,12 @@ def processing(input_df: DataFrame, model_type: str, test_size: float, train_bat
     FTR = input_df["FTR"]
     input_df.drop(labels = ["FTR"], axis = 1, inplace = True)
 
-    if model_type == "model 1":
-        # select just the desired features
-        raw_data_combined = input_df[["B365A", "B365D", "B365H", "BWA", "BWD", "BWH", "PSA",
+    # select just the desired features
+    raw_data_combined = input_df[["B365A", "B365D", "B365H", "BWA", "BWD", "BWH", "PSA",
                                       "PSD", "PSH", "WHA", "WHD", "WHH"]]
-
-    elif model_type == "model 2":
-        raise Exception("Not rewritten yet")
-        # select just the desired features
-        raw_data_combined = input_df[["HomeTeam", "AwayTeam", "B365A", "B365D", "B365H",
-                                      "BWA", "BWD", "BWH", "PSA", "PSD", "PSH", "WHA",
-                                      "WHD", "WHH"]]
-
-        # one hot encoding for the team names
-        raw_data_combined = team_one_hot_encoding(raw_data_combined)
-
-    elif model_type == "model 3":
-        raise Exception("Not rewritten yet")
-        raw_data_combined = input_df[["HomeTeam", "AwayTeam"]]
-
-        # one hot encoding for the team names
-        raw_data_combined = team_one_hot_encoding(raw_data_combined)
-
-    else:
-        raise Exception("Not a valid model, please choose a valid model")
 
     # order columns a-z, these will be output to then be used to check that
     # whenever data is fed to the model it is passed correctly
-
     raw_data_combined = raw_data_combined.reindex(sorted(raw_data_combined.columns),
                                                   axis = 1)
     ord_cols = {"columns": list(raw_data_combined.columns)}
@@ -232,7 +190,7 @@ def processing(input_df: DataFrame, model_type: str, test_size: float, train_bat
     raw_data_combined_scaled = raw_data_combined_scaled.sample(frac = 1).reset_index(drop = True)
     train_raw, test_raw = train_test_split(raw_data_combined_scaled, test_size = test_size)
     # address class imbalance and increase size of training dataset
-    train_raw = correct_class_imbalance(train_raw, multiplier = 50)
+    train_raw = correct_class_imbalance(train_raw, final_multiplier = 50)
     # turn dataframes in np arrays
     train_labels = train_raw.pop("FTR").to_numpy()
     train_features = train_raw.to_numpy()
@@ -248,7 +206,7 @@ def processing(input_df: DataFrame, model_type: str, test_size: float, train_bat
     return train_tensor, test_tensor, ord_cols_df, coeffs
 
 
-def formatting_for_passing_to_model(rawdata: DataFrame, exp_features, model_id):
+def formatting_for_passing_to_model(rawdata: DataFrame, exp_features, saved_models_dir: str, model_id: str):
     """
     def used to format rawdataset before it is passed to a model
     :param rawdata: dataframe
@@ -259,47 +217,11 @@ def formatting_for_passing_to_model(rawdata: DataFrame, exp_features, model_id):
                     model id to create raw data for
     :return: wragnled dataframe
     """
-    try:
-        backtesting_data = rawdata[exp_features]
-        return backtesting_data
-    except KeyError:
-        key_present = list(rawdata.columns)
-        keys_missing = []
-
-        for key in exp_features:
-            if key not in key_present:
-                keys_missing.append(key)
-
-        length = len(keys_missing)
-        track = 0
-        shape = rawdata.shape
-
-        for keys in keys_missing:
-            if keys[:2] == "at" or "ht":
-                track += 1
-
-        print(colored("Attempting to deal with missing datapoint(s)....", 'red'))
-
-        entry = np.zeros((shape[0], 1))
-
-        if length == track:
-            print(colored("Fixing input data....", 'red'))
-            for key in keys_missing:
-                rawdata[key] = entry
-            try:
-                backtesting_data = rawdata[exp_features]
-                print(colored("Input data fixed", 'green'))
-                return backtesting_data
-            except KeyError:
-                print(colored("ERROR - Missing datapoint(s): ", 'red'))
-                print(colored("Attempt was made to fix input data, but it wasn't possible", 'red'))
-
-        else:
-            print(colored("ERROR - input data cannot be handled", 'red'))
-            print(
-                colored(model_id + " can't be used to make predicitons wihtout the above, datapoint(s)",
-                        "red"))
-            raise Exception
+    data_with_expected_features = rawdata[exp_features]
+    data_in_sclaed = scale_df_with_params(data_with_expected_features,
+                                          saved_models_dir + model_id+ "/" + model_id + "_coeffs.csv")
+    features_tensor = Tensor(data_in_sclaed.to_numpy())
+    return features_tensor
 
 
 def team_name_standardisation(team: str) -> str:

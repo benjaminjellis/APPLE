@@ -25,14 +25,13 @@ warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
 class Train(object):
 
-    def __init__(self, model_type: str) -> None:
+    def __init__(self) -> None:
 
         """
         :param model_type: str
                     one of "model 1", "model 2" or "model 3", see documentation for discussion on models
         """
 
-        self.model_type = model_type
         self.path = str(pathlib.Path().absolute())
 
         data_dir = self.path + "/data/raw/"
@@ -78,8 +77,7 @@ class Train(object):
             os.makedirs(model_output_dir)
 
         # process and split the data, coeffs used to scale the data
-        train_tensor, test_tensor, ord_cols_df, coeffs = dp.processing(self.raw_data_combined,
-                                                                       model_type = self.model_type,
+        train_tensor, test_tensor, ord_cols_df, coeffs = dp.processing(input_df = self.raw_data_combined,
                                                                        test_size = 0.2,
                                                                        train_batch_size = 5)
 
@@ -95,6 +93,7 @@ class Train(object):
                         optimiser = optimizer, verbose = verbose)
 
         today = date.today().strftime("%Y%m%d")
+
         # output the model, the columns and scaler coeffs
         save(net.state_dict(), model_output_dir + model_id + ".pth")
         ord_cols_df.to_csv(model_output_dir + model_id + ".csv", index_label = False, index = False)
