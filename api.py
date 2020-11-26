@@ -24,6 +24,7 @@ from shutil import rmtree
 path = str(Path().absolute())
 home_dir_abs = str(Path().absolute().parent.parent)
 
+
 def return_apple_result_to_strudel(apple_results: DataFrame) -> None:
     """
     Def to return APPLE produced predictions to STRUDEL
@@ -147,20 +148,24 @@ def rest_apple_interface(task: dict, task_list: list) -> None:
 
 # --- API is defined from here to end
 
-app = Flask(__name__)
+application = Flask(__name__)
 # location to make / store databse in
-db_loc = 'sqlite:///' + home_dir_abs + "/users_db_apple/users.db"
-app.config['SQLALCHEMY_DATABASE_URI'] = db_loc
-app.config['SECRET_KEY'] = str(uuid.uuid4())
-app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
-db = SQLAlchemy(app)
+db_loc = 'sqlite:///users_db_apple/users.db'
+
+if not os.path.exists("users_db_apple"):
+    os.mkdir("users_db_apple")
+
+application.config['SQLALCHEMY_DATABASE_URI'] = db_loc
+application.config['SECRET_KEY'] = str(uuid.uuid4())
+application.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+db = SQLAlchemy(application)
 auth = HTTPBasicAuth()
 
 # list used to store all task dicts
 tasks = []
 vis_requests = []
 
-accepting_new_users = False
+accepting_new_users = True
 
 
 # class for user administration
@@ -198,7 +203,7 @@ class User(db.Model):
         """
         return jwt.encode(
             {'id': self.id, 'exp': time.time() + token_validity_length},
-            app.config['SECRET_KEY'], algorithm = 'HS256'
+            application.config['SECRET_KEY'], algorithm = 'HS256'
         )
 
     @staticmethod
@@ -210,7 +215,7 @@ class User(db.Model):
         :return: nothing
         """
         try:
-            data = jwt.decode(token, app.config['SECRET_KEY'],
+            data = jwt.decode(token, application.config['SECRET_KEY'],
                               algorithms = ['HS256'])
         except:
             return
@@ -233,7 +238,16 @@ def verify_password(username_or_token: str, password: str) -> bool:
     return True
 
 
-@app.route('/apple/api/v1.0/newuser', methods=['POST'])
+@application.route('/', methods=['GET'])
+def health() -> json:
+    """
+    EB uses this route to check health of the app, setting this up so it remains
+    healthy
+    """
+    return jsonify({'health': "healthy"})
+
+
+@application.route('/apple/api/v1.0/newuser', methods=['POST'])
 def new_user() -> json:
     """
     Endpoint to create new user
@@ -250,13 +264,13 @@ def new_user() -> json:
         user.hash_password(password)
         db.session.add(user)
         db.session.commit()
-        return (jsonify({'username': user.username}), 201,
-                {'Location': url_for('get_user', id=user.id, _external=True)})
+        return make_response(jsonify({'user': username,
+                                      "status": "created"}), 201)
     else:
         return jsonify({"Error": "Cannot register new users at this time"})
 
 
-@app.route('/apple/api/v1.0/generatetoken', methods = ['GET'])
+@application.route('/apple/api/v1.0/generatetoken', methods = ['GET'])
 @auth.login_required
 def get_auth_token():
     """
@@ -267,7 +281,7 @@ def get_auth_token():
     return make_response(jsonify({'token': token.decode('ascii'), 'duration': 600}))
 
 
-@app.errorhandler(404)
+@application.errorhandler(404)
 def not_found():
     """
     Return error message
@@ -276,7 +290,7 @@ def not_found():
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
-@app.errorhandler(400)
+@application.errorhandler(400)
 def not_found():
     """
     Return error message
@@ -285,7 +299,7 @@ def not_found():
     return make_response(jsonify({'error': 'Not found'}), 400)
 
 
-@app.route('/apple/api/v1.0/tasks', methods = ['GET'])
+@application.route('/apple/api/v1.0/tasks', methods = ['GET'])
 @auth.login_required
 def get_tasks():
     """
@@ -295,7 +309,7 @@ def get_tasks():
     return make_response(jsonify({'tasks': tasks}))
 
 
-@app.route('/apple/api/v1.0/tasks', methods = ['POST'])
+@application.route('/apple/api/v1.0/tasks', methods = ['POST'])
 @auth.login_required
 def create_task():
     """"
@@ -327,7 +341,7 @@ def create_task():
     return jsonify({'task': task}), 201
 
 
-@app.route('/apple/api/v1.0/tasks/<int:task_id>', methods = ['GET'])
+@application.route('/apple/api/v1.0/tasks/<int:task_id>', methods = ['GET'])
 @auth.login_required
 def get_task(task_id: str):
     """
@@ -350,7 +364,7 @@ supported_vis_types = ["volatility", "time_series", "stratified_performance"]
 aggregated_data_filepath = "data/aggregated_results/20_21/predictions_and_results_log.csv"
 
 
-@app.route('/analytics/api/v1.0/visualisations', methods = ['POST'])
+@application.route('/analytics/api/v1.0/visualisations', methods = ['POST'])
 @auth.login_required
 def create_visualisations():
     """"
@@ -394,7 +408,7 @@ def create_visualisations():
     return jsonify({'request': vis_request}), 201
 
 
-@app.route('/analytics/api/v1.0/visualisations/all', methods = ['POST'])
+@application.route('/analytics/api/v1.0/visualisations/all', methods = ['POST'])
 @auth.login_required
 def create_all_visualisations():
     """"
@@ -416,7 +430,7 @@ def create_all_visualisations():
     return jsonify({'request': vis_request}), 201
 
 
-@app.route('/analytics/api/v1.0/visualisations', methods = ['GET'])
+@application.route('/analytics/api/v1.0/visualisations', methods = ['GET'])
 @auth.login_required
 def get_all_requests():
     """
@@ -426,7 +440,7 @@ def get_all_requests():
     return jsonify({'tasks': vis_requests})
 
 
-@app.route('/apple/api/v1.0/temporarydata', methods = ['DELETE'])
+@application.route('/apple/api/v1.0/temporarydata', methods = ['DELETE'])
 @auth.login_required
 def delete_temporary_data():
     """"
@@ -512,4 +526,4 @@ if __name__ == '__main__':
     if not os.path.exists('db.sqlite'):
         db.create_all()
     # run app here
-    app.run(debug = False)
+    application.run(debug = False)
