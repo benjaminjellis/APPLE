@@ -421,6 +421,8 @@ def create_all_visualisations():
         "type": "all",
         "request_status": "Submitted"
     }
+    if "date" in request.json:
+        vis_request["date"] = request.json["date"]
     vis_requests.append(vis_request)
     # create vis object
     update_request_status(request_id = request_id, status_update = "Generating", request_list = vis_requests)
@@ -472,7 +474,10 @@ def generate_and_return_visualisation(vis_type: str, request_id: str, full_reque
     strudel_connection = StrudelInterface(credentials_filepath = path + '/credentials/credentials.json')
     # first day of the season
     start_date = "2020-09-12"
-    end_date = datetime.today().strftime("%Y-%m-%d")
+    if "date" in full_request:
+        end_date = full_request["date"]
+    else:
+        end_date = datetime.today().strftime("%Y-%m-%d")
     historical_data_loc = "temporary_data/" + request_id + "/historical_data.csv"
     strudel_connection.get_predictions_and_ftrs(start_date= start_date,
                                                 end_date = end_date,
