@@ -130,6 +130,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+
+# api user db
+users_db_apple
+
 # Environments
 .env
 .venv
