@@ -252,14 +252,14 @@ class MineOdds(object):
         """
         self.williamhill()
         self.pinacle()
-        self.bwin()
+        #self.bwin()
         # self.bet365()
         self.driver.close()
 
         # mergeing / joining DFs
         intermediate_1 = self.fixtures.merge(self.PINACLE, on = ["HomeTeam", "AwayTeam"], how = "left")
-        intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
-        output = intermediate_2.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
+        #intermediate_2 = intermediate_1.merge(self.BWIN, on = ["HomeTeam", "AwayTeam"], how = "left")
+        output = intermediate_1.merge(self.WH, on = ["HomeTeam", "AwayTeam"], how = "left")
         # merge, inner with self.fixtures to get fiixture ID
         output = output.merge(self.fixtures, how = "inner", on = ["HomeTeam", "AwayTeam"])
 

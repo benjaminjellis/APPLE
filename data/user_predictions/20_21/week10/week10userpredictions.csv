@@ -1,0 +1,10 @@
+Date,Time,Week,HomeTeam,AwayTeam,FixtureID,Aman Prediction,Dev Prediction,Leanne Prediction,Marvyn Prediction
+2020-11-28,12:30:00,10,Brighton,Liverpool,121,A,A,A,A
+2020-11-28,15:00:00,10,Manchester City,Burnley,122,H,H,H,H
+2020-11-28,17:30:00,10,Everton,Leeds,123,H,D,D,D
+2020-11-28,20:00:00,10,West Brom,Sheffield Utd,124,A,A,H,A
+2020-11-29,14:00:00,10,Southampton,Manchester United,125,A,A,A,H
+2020-11-29,16:30:00,10,Chelsea,Tottenham,126,D,H,A,A
+2020-11-29,19:15:00,10,Arsenal,Wolves,127,H,H,D,H
+2020-11-30,17:30:00,10,Leicester,Fulham,128,H,H,H,H
+2020-11-30,20:00:00,10,West Ham,Aston Villa,129,A,A,H,H
