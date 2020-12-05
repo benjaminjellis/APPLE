@@ -62,7 +62,6 @@ def query_fixtures_endpoint_csv(start_date: str, end_date: str, output_loc: str,
                       "green"))
         response_content = response.content
         response_raw = pd.read_csv(io.StringIO(response_content.decode('utf-8')))
-        response_raw.to_csv("~/Desktop/test123.csv")
         # rename some columns
         response_raw.rename(
             {'homeTeamName': 'HomeTeam', 'awayTeamName': 'AwayTeam', "date": "Date", "time": "Time", "fixtureId": "FixtureID", 'week': 'Week'}, axis = 1,

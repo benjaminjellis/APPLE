@@ -32,8 +32,6 @@ class APPLE(object):
                 or id for the mined_data object stored in STRUDEL if use_strudel is True
         :param job_name: str
                 name / ID of the job, this will determine the name of the output directory
-        :param week: int
-                week number
         :param start_date: str
                 OPTIONAL, required if use_strudel is TRUE
                 Date in ISO format, YYYY-MM-DD, for the start date of fixtures window
@@ -112,7 +110,7 @@ class APPLE(object):
 
         # train a model of all three 3 model types  on the latest data
         print(colored("Training model on new data....", "green"))
-        Train().train(epochs = 6, verbose = True)
+        Train().train(epochs = 3, verbose = True)
         print(colored("Training completed", "green"))
 
         # interrogate the model log to pick the best models compiled thus far

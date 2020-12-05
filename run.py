@@ -20,8 +20,7 @@ weekly_run = APPLE(use_strudel = True,
                    end_date = "2020-11-04",
                    fixtures_to_predict = fixtures_to_predict,
                    data_for_predictions = data_for_predictions,
-                   job_name = "week7",
-                   week = 7)
+                   job_name = "week7")
 
 # if you want to use a local file
 """"
