@@ -13,4 +13,4 @@ APPLE is currently under Phase 2 testing and development.
 Phase 1 was a phase of real world testing where APPLE was tested against 3 human predictors of games. Evaluation of Phase 1 can be found in the notebook [here.](https://github.com/benjaminjellis/APPLE/blob/master/docs/Phase_1/APPLE_Phase1_evaluation_results.ipynb)
 
 ## Credits
-My thanks to https://www.football-data.co.uk/ for providing the data that APPLE models are trained on. 
+APPLE is trained on data from https://www.football-data.co.uk/
