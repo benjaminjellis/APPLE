@@ -1,10 +1,12 @@
 """
 Class used to train feed-forward MLP classifiers to make predictions
 """
-
-from core.nnet import NNet, train
 from torch import nn, save
 import torch.optim as optim
+
+from core.nnet import NNet, train
+import core.data_processing as dp
+
 import pandas as pd
 import urllib.request
 import os
@@ -12,7 +14,6 @@ from datetime import date
 import pathlib
 from pathlib import Path
 import uuid
-import core.data_processing as dp
 from termcolor import colored
 from http.client import RemoteDisconnected
 from urllib.error import HTTPError
@@ -25,13 +26,7 @@ warnings.filterwarnings(action = "ignore", category = DataConversionWarning)
 
 class Train(object):
 
-    def __init__(self) -> None:
-
-        """
-        :param model_type: str
-                    one of "model 1", "model 2" or "model 3", see documentation for discussion on models
-        """
-
+    def __init__(self):
         self.path = str(pathlib.Path().absolute())
 
         data_dir = self.path + "/data/raw/"
@@ -77,20 +72,29 @@ class Train(object):
             os.makedirs(model_output_dir)
 
         # process and split the data, coeffs used to scale the data
-        train_tensor, test_tensor, ord_cols_df, coeffs = dp.processing(input_df = self.raw_data_combined,
-                                                                       test_size = 0.2,
-                                                                       train_batch_size = 5)
-
+        train_dataloader, test_dataloder, ord_cols_df, coeffs = dp.processing(input_df = self.raw_data_combined,
+                                                                              test_size = 0.2,
+                                                                              train_batch_size = 5)
+        lr = 0.001
         # create a neural net
         net = NNet()
-
         # loss function
         criterion = nn.CrossEntropyLoss()
         # optimiser
-
-        optimizer = optim.Adagrad(net.parameters(), lr = 0.001, weight_decay = 0.001)
-        history = train(nn = net, train_tensor = train_tensor, test_tensor = test_tensor, epochs = epochs, criterion = criterion,
-                        optimiser = optimizer, verbose = verbose)
+        optimiser = optim.AdamW(net.parameters(), lr = lr, weight_decay = 0.001)
+        # lr scheduler
+        lr_scheduler = optim.lr_scheduler.OneCycleLR(optimizer = optimiser,
+                                                     max_lr = lr,
+                                                     epochs = epochs,
+                                                     steps_per_epoch = len(train_dataloader))
+        history = train(nn = net,
+                        train_dataloder = train_dataloader,
+                        test_dataloder = test_dataloder,
+                        epochs = epochs,
+                        criterion = criterion,
+                        optimiser = optimiser,
+                        lr_scheduler = lr_scheduler,
+                        verbose = verbose)
 
         today = date.today().strftime("%Y%m%d")
 
@@ -100,7 +104,7 @@ class Train(object):
         coeffs.to_csv(model_output_dir + model_id + "_coeffs.csv", index_label = False, index = False)
 
         log_output = self.path + "/saved_models/model_log.csv"
-        log_entry = { "Model ID": model_id, "Date": today,
+        log_entry = {"Model ID": model_id, "Date": today,
                      "Test Acc": [history[1][-1]], "Test F1": [history[2][-1]]}
 
         # update the log with results of test of model

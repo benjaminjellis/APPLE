@@ -6,7 +6,6 @@ from torch import nn
 from tqdm import tqdm
 from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
 
-
 seed = 42
 torch.manual_seed(seed)
 
@@ -23,14 +22,24 @@ class NNet(nn.Module):
         return x
 
 
-def train(nn: nn.Module, train_tensor: list, test_tensor: list, epochs: int, criterion, optimiser, verbose: bool) -> tuple:
+def train(nn: nn.Module,
+          train_dataloder: list,
+          test_dataloder: list,
+          epochs: int,
+          criterion,
+          optimiser,
+          lr_scheduler,
+          verbose: bool
+          ) -> tuple:
     """
     Training loop
+
+    :param lr_scheduler:
     :param nn: nn.Module
             Torch nn class
-    :param train_tensor: list
+    :param train_dataloder: list
             list containing tuple: (Tenosr(batch), Tensor(labels))
-    :param test_tensor: list
+    :param test_dataloder: list
             list containing tuple: (Tenosr(batch), Tensor(labels))
     :param epochs: int
             number of epcchs to train on
@@ -38,8 +47,13 @@ def train(nn: nn.Module, train_tensor: list, test_tensor: list, epochs: int, cri
             a torch loss function
     :param optimiser:
             a torch optimiser
+    :param verbose:
+    :param lr_scheduler:
     :return: history
     """
+
+    device = ("cuda" if torch.cuda.is_available() else "cpu")
+    nn.to(device)
 
     epoch_counter = []
     test_accuracy = []
@@ -47,36 +61,61 @@ def train(nn: nn.Module, train_tensor: list, test_tensor: list, epochs: int, cri
 
     for epoch in range(epochs):
 
-        epoch_counter.append(epoch+1)
+        epoch_counter.append(epoch + 1)
         running_loss = 0.0
 
-        for data in tqdm(train_tensor):
+        train_dataloder = tqdm(train_dataloder)
+
+        nn.train()
+
+        for data in train_dataloder:
             inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
             # zero the parameter gradients
             optimiser.zero_grad()
             # forward + backward + optimize
-            outputs = nn(inputs)
+            outputs = nn(inputs.float())
             loss = criterion(outputs, labels)
             loss.backward()
             optimiser.step()
+            lr_scheduler.step()
             running_loss += loss.item()
 
         # calcuate test accuracy
         correct = 0
         total = 0
+
         with torch.no_grad():
-            for data in test_tensor:
-                inputs, labels = data
-                outputs = nn(inputs)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+            test_loss = 0
+            nn.eval()
+            for data in test_dataloder:
+                test_inputs, test_labels = data
+
+                test_inputs = test_inputs.to(device)
+                test_labels = test_labels.to(device)
+
+                test_outputs = nn(test_inputs)
+                test_loss += criterion(test_outputs, test_labels).item()
+
+                _, predicted = torch.max(test_outputs.data, 1)
+                total += test_labels.size(0)
+                correct += (predicted == test_labels).sum().item()
+
+        test_accuracy_item = 100 * (correct / total)
+        test_f1_score_item = f1_score(test_labels, predicted, average = 'weighted')
         if verbose:
-            print('\nEpoch(s): {} | Accuracy: {}% | F1 Score: '.format(epoch + 1, 100 * correct / total), f1_score(labels, predicted, average='weighted'))
-        test_accuracy.append(100 * correct / total)
-        test_f1_score.append(f1_score(labels, predicted, average='weighted'))
+            print(
+                '\nEpoch [{}/{}] | Train Loss: {:.2f} | Test Loss {:.2f} | Test Accuracy: {:.2f}% | Test F1 Score: {:.2f}'.format(
+                    epoch + 1,
+                    epochs,
+                    running_loss,
+                    test_loss,
+                    test_accuracy_item,
+                    test_f1_score_item))
+        test_accuracy.append(test_accuracy_item)
+        test_f1_score.append(test_f1_score_item)
 
     history = (epoch_counter, test_accuracy, test_f1_score)
 
     return history
-
