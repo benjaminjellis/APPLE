@@ -1,7 +1,7 @@
 """
 Def used across APPLE for data processing
 """
-
+from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from core.scaler import scale_df
@@ -14,42 +14,26 @@ from torch import Tensor
 from numpy import array
 
 
-def create_batched_tensor_dataset(batch_size: int, features: array, labels: array) -> list:
-    """
-    def to create a list of tuples with batched tensors of features and lables
-    :param batch_size: int
-            size of batches to create in each tupple
-    :param features: numpy array
-            a numpy array of features
-    :param labels: numpy array
-            a numpy array of lables
-    :return a list of tuples with batched tensors of features and lables
-    """
-    # labels should be (nx1) and features should be (nxm)
-    features_rows = features.shape[0]
-    lables_rows = labels.shape[0]
-    if lables_rows != features_rows:
-        raise ValueError("Number of lables does not match number of observed features: {} and {}".format(lables_rows,features_rows))
-    elif labels.ndim != 1:
-        raise ValueError("The lable array should be 1D, got {} dimensions".format(labels.ndim))
-    else:
-        # split the passed arrays into batches and save each batch as an entry in a list
-        indices_or_sections = int(features_rows / batch_size)
-        features = np.array_split(features, indices_or_sections)
-        labels = np.array_split(labels, indices_or_sections)
-        for i in range(0, len(features)):
-            # convert the arrays in each entry of the lists into tensors
-            features[i] = Tensor(features[i])
-            labels[i] = Tensor(labels[i]).long()
-        batched_tensor = [(features[i],labels[i]) for i in range(0,len(features))]
-        # return the batched tesnor representation of the passed np arrays
-        return batched_tensor
+class AppleDataset(Dataset):
+
+    def __init__(self, features: array, labels: array):
+        self.features = features.astype('float32')
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, item: int):
+        item_features = self.features[item]
+        item_labels = self.labels[item]
+
+        return item_features, item_labels
 
 
 def correct_class_imbalance(train_dataset: DataFrame, final_multiplier: int) -> DataFrame:
     """
     Def to over-sample classes underrepresented in training dataset
-    :param multiplier: int
+    :param final_multiplier: int
             to increase size of dataset
     :param train_dataset: DataFrame
             dataset to be used for training
@@ -172,7 +156,7 @@ def processing(input_df: DataFrame, test_size: float, train_batch_size: int):
 
     # select just the desired features
     raw_data_combined = input_df[["B365A", "B365D", "B365H", "BWA", "BWD", "BWH", "PSA",
-                                      "PSD", "PSH", "WHA", "WHD", "WHH"]]
+                                  "PSD", "PSH", "WHA", "WHD", "WHH"]]
 
     # order columns a-z, these will be output to then be used to check that
     # whenever data is fed to the model it is passed correctly
@@ -197,14 +181,14 @@ def processing(input_df: DataFrame, test_size: float, train_batch_size: int):
     train_features = train_raw.to_numpy()
     test_labels = test_raw.pop("FTR").to_numpy()
     test_features = test_raw.to_numpy()
-    # turn arrays into torch Tensros for passing to neural net
-    train_tensor = create_batched_tensor_dataset(batch_size = train_batch_size,
-                                                 features = train_features,
-                                                 labels = train_labels)
-    test_tensor = create_batched_tensor_dataset(batch_size = len(test_features),
-                                                features = test_features,
-                                                labels = test_labels)
-    return train_tensor, test_tensor, ord_cols_df, coeffs
+    # turn arrays into datasets, then create dataloaders
+    train_dataset = AppleDataset(features = train_features, labels = train_labels)
+    test_dataset = AppleDataset(features = test_features, labels = test_labels)
+    train_dataloder = DataLoader(dataset = train_dataset,
+                                 batch_size = train_batch_size)
+    test_dataloder = DataLoader(dataset = test_dataset,
+                                batch_size = len(test_dataset))
+    return train_dataloder, test_dataloder, ord_cols_df, coeffs
 
 
 def formatting_for_passing_to_model(rawdata: DataFrame, exp_features, saved_models_dir: str, model_id: str):
@@ -220,7 +204,7 @@ def formatting_for_passing_to_model(rawdata: DataFrame, exp_features, saved_mode
     """
     data_with_expected_features = rawdata[exp_features]
     data_in_sclaed = scale_df_with_params(data_with_expected_features,
-                                          saved_models_dir + model_id+ "/" + model_id + "_coeffs.csv")
+                                          saved_models_dir + model_id + "/" + model_id + "_coeffs.csv")
     features_tensor = Tensor(data_in_sclaed.to_numpy())
     return features_tensor
 

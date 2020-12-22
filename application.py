@@ -361,7 +361,7 @@ def get_task(task_id: str):
 
 supported_vis_types = ["volatility", "time_series", "stratified_performance"]
 # this will need to be ported to a request to get data from STRUDEL
-aggregated_data_filepath = "data/aggregated_results/20_21/predictions_and_results_log.csv"
+# aggregated_data_filepath = "data/aggregated_results/20_21/predictions_and_results_log.csv"
 
 
 @application.route('/analytics/api/v1.0/visualisations', methods = ['POST'])
