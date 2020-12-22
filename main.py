@@ -238,7 +238,8 @@ def verify_password(username_or_token: str, password: str) -> bool:
     return True
 
 
-@application.route('/', methods=['GET'])
+# @application.route('/', methods=['GET'])
+@application.route('/')
 def health() -> json:
     """
     EB uses this route to check health of the app, setting this up so it remains
