@@ -291,15 +291,6 @@ def not_found():
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
-@app.errorhandler(400)
-def not_found():
-    """
-    Return error message
-    :return: json
-    """
-    return make_response(jsonify({'error': 'Not found'}), 400)
-
-
 @app.route('/apple/api/v1.0/tasks', methods = ['GET'])
 @auth.login_required
 def get_tasks():
@@ -527,10 +518,10 @@ def generate_and_return_visualisation(vis_type: str, request_id: str, full_reque
         rmtree(temp_dir.parent)
         update_request_status(request_id = request_id, status_update = "Complete", request_list = vis_requests)
 
-""""
+
 if __name__ == '__main__':
     if not os.path.exists('db.sqlite'):
         db.create_all()
     # run app here
-    app.run(debug = False)
-"""
+    app.run(host='127.0.0.1', port=8080,debug=True)
+

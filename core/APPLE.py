@@ -18,7 +18,12 @@ from pathlib import Path
 
 class APPLE(object):
 
-    def __init__(self, use_strudel: bool, fixtures_to_predict: str, data_for_predictions: str, job_name: str, start_date: str = None, end_date: str = None):
+    def __init__(self, use_strudel: bool,
+                 fixtures_to_predict: str,
+                 data_for_predictions: str,
+                 job_name: str,
+                 start_date: str = None,
+                 end_date: str = None):
         """
         Constructor loads file into memory, creates file paths, results directories and merges data and fixtures file
         :param use_strudel: bool
@@ -43,22 +48,30 @@ class APPLE(object):
         self.path = str(Path().absolute())
         fixtures_to_predict = self.path + "/" + fixtures_to_predict
 
+        # set credentials
+        if os.system("echo ${}".format("GCP_PROJECT")):
+            # get credemtials from GCP bucket
+            credentials = "bucket"
+        else:
+            credentials = self.path + '/credentials/credentials.json'
+
         if use_strudel:
             # import user predictions from STRUDEL
             if start_date is None or end_date is None:
                 # check that start_date and end_date are specified
-                raise ValueError("Using STRUDEL to get user predictions requires start_date and end_date to be specified")
+                raise ValueError("Using STRUDEL to get user predictions requires start_date and end_date to be "
+                                 "specified")
             else:
-                strudel_connection = StrudelInterface(credentials_filepath = self.path + '/credentials/credentials.json')
+                strudel_connection = StrudelInterface(credentials_filepath = credentials)
                 strudel_connection.get_fixtures_and_user_predictions(start_date = start_date,
                                                                      end_date = end_date,
                                                                      output_loc = fixtures_to_predict)
                 if data_for_predictions.isnumeric():
                     # if data_for_predictions is a number this means it's an ID that can be used to grab the data from
                     # STRUDEL so do so
-                    output_filepaht_for_mined_data = self.path + "/temporary_data/" + job_name + "/mined_data_id_" + data_for_predictions + ".json"
-                    strudel_connection.get_mined_data(mined_data_id = data_for_predictions, output_filepath = output_filepaht_for_mined_data)
-                    data_for_predictions = output_filepaht_for_mined_data
+                    output_filepath_for_mined_data = self.path + "/temporary_data/" + job_name + "/mined_data_id_" + data_for_predictions + ".json"
+                    strudel_connection.get_mined_data(mined_data_id = data_for_predictions, output_filepath = output_filepath_for_mined_data)
+                    data_for_predictions = output_filepath_for_mined_data
                 else:
                     raise Exception("Got filepath not id, cannot query mined_data from Strudel")
         else:
@@ -71,7 +84,7 @@ class APPLE(object):
         data_for_predictions_to_merge = load_json_or_csv(filepath = data_for_predictions)
 
         # clean data_for_predictions_to_merge (mined data) - this is conversion from british style odds
-        # to european ones, please team name standardisation
+        # to european ones
         data_for_predictions_to_merge = clean_mined_data(data_for_predictions_to_merge)
 
         # extract data for predictions from mined data by checking which fixtures
