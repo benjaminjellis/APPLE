@@ -176,3 +176,5 @@ credentials
 credentials.txt
 credentials.json
 
+# local data files
+data
