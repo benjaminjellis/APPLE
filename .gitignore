@@ -178,3 +178,12 @@ credentials.json
 
 # local data files
 data
+
+# local saved models 
+saved_models
+
+# local saved results
+results
+
+# docs for the meantime 
+docs
